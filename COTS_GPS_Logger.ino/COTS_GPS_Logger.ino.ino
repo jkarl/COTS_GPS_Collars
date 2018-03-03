@@ -2,6 +2,8 @@
 #include <SPI.h>
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
+#include "LowPower.h"
+
 /*
    Code for creating a simple GPS data logger from a uBLOX drone GPS unit, Arduino Pro Mini,
    and a microSD module. This code uses the LowPower library to minimize power draw and obtain
@@ -32,14 +34,24 @@ const int chipSelect = 8;
 void setup()
 {
   Serial.begin(115200);
-  ss.begin(GPSBaud);
-
-  Serial.println(F("DeviceExample.ino"));
-  Serial.println(F("A simple demonstration of TinyGPS++ with an attached GPS module"));
-  Serial.print(F("Testing TinyGPS++ library v. ")); Serial.println(TinyGPSPlus::libraryVersion());
-  Serial.println(F("by Mikal Hart"));
+  Serial.println(F("COTS_GPS_Logger.ino"));
+  Serial.println(F("A simple GPS logger module using TinyGPS++, LowPower, and SD"));
+  Serial.print(F("Logs GPS data to a SD card")); Serial.println(TinyGPSPlus::libraryVersion());
+  Serial.println(F("by Jason Karl"));
   Serial.println();
 
+  // Initialize & Check GPS
+  Serial.println("Initializing GPS...");
+  ss.begin(GPSBaud);
+  // Check for GPS connected.
+  if (millis() > 5000 && gps.charsProcessed() < 10)
+  {
+    Serial.println(F("No GPS detected: check wiring."));
+    while(true);
+  }
+
+
+  // Initialize SD card
   Serial.print("Initializing SD card...");
   // see if the card is present and can be initialized:
   if (!SD.begin(chipSelect)) {
@@ -55,13 +67,9 @@ void setup()
 void loop()
 {
   // This sketch displays information every time a new sentence is correctly encoded.
-
-  // Check for GPS connected.
-  if (millis() > 5000 && gps.charsProcessed() < 10)
-  {
-    Serial.println(F("No GPS detected: check wiring."));
-    while(true);
-  }
+  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+  Serial.println("I'm awake again!!!");
+  Serial.println(".....");
 
   // Poll GPS unit, write result to SD card.
   while (ss.available() > 0)
@@ -72,7 +80,7 @@ void loop()
       File dataFile = SD.open("gpslog.csv", FILE_WRITE);
       // if the file is available, write to it:
       if (dataFile) {
-        Serial.println("Writting GPS data to SD card.")
+        Serial.println("Writting GPS data to SD card.");
         dataFile.println(GPSdata);
         dataFile.close();
         // print to the serial port too:
