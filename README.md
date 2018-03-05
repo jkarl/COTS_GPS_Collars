@@ -16,7 +16,9 @@ Question: Is it possible to make a GPS collar for tracking livestock that will l
 |Adafruit TPL 5110 Power Timer Breakout|Adafruit.com|$4.95|20 µA | https://learn.adafruit.com/adafruit-tpl5110-power-timer-breakout/
 |Arduino Pro Mini|multiple sources|variable|~45 mA|https://www.sparkfun.com/products/11113
 |uBlox GPS|multiple sources|variable|40 mA|https://www.sparkfun.com/products/14198
-|Sparkfun Shifting µSD Breakout|Sparkfun.com|$4.95|150 mA??|https://www.sparkfun.com/products/13743
+|Sparkfun Shifting µSD Breakout|Sparkfun.com|$4.95|??|https://www.sparkfun.com/products/13743
+
+Expected active power draw should be somewhere around 100mA for about a minute (time to acquire GPS signal and write valid coordinate to the SD card).
 
 ### Resources
 - [Arduino SD library](https://www.arduino.cc/en/Reference/SDCardNotes)

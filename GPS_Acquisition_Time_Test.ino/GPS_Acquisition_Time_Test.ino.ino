@@ -1,0 +1,156 @@
+#include <SD.h>
+#include <SPI.h>
+#include <TinyGPS++.h>
+#include <SoftwareSerial.h>
+
+/*
+   Code for creating a simple GPS data logger from a uBLOX drone GPS unit, Arduino Pro Mini,
+   and a microSD module. This code establishes a GPS connection in the setup function and
+   measures the time it takes to go from GPS initialization to active signal, and then to
+   a HDOP of less than 5. 
+
+   This code draws from the following source scripts:
+   - https://www.arduino.cc/en/Tutorial/Datalogger
+   - TinyGPS++ sample sketch by Mikal Hart
+*/
+
+// Set up GPS pins and baud rate
+static const int RXPin = 4, TXPin = 3;
+static const uint32_t GPSBaud = 9600;
+
+// Initialize the TinyGPS++ object and serial connection to the GPS device
+TinyGPSPlus gps;
+SoftwareSerial ss(RXPin, TXPin);
+
+// Set up the SD card module
+const int chipSelect = 8;
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+void setup()
+{
+  // Set up some logging to the serial monitor.
+  Serial.begin(115200);
+  Serial.println(F("COTS_GPS_Logger.ino"));
+  Serial.println(F("A simple GPS logger module using TinyGPS++, and SD"));
+  Serial.print(F("Logs GPS data to a SD card")); Serial.println(TinyGPSPlus::libraryVersion());
+  Serial.println(F("by Jason Karl"));
+  Serial.println();
+
+  // Initialize SD card
+  Serial.print("Initializing SD card...");
+  if (!SD.begin(chipSelect)) {     // see if the card is present and can be initialized:
+    Serial.println("Card failed, or not present");
+    return;      // don't do anything more:
+  }
+  Serial.println("card initialized.");
+  
+  // Initialize & Check GPS
+  Serial.println("Initializing GPS...");
+  ss.begin(GPSBaud);
+  // Check for GPS connected.
+  if (millis() > 5000 && gps.charsProcessed() < 10)
+  {
+    Serial.println(F("No GPS detected: check wiring."));
+    while(true);
+  }
+
+  // Set up the time logging for checking the GPS
+  unsigned long startTime, fixTime = 60000, endTime = 0;
+
+  // Poll GPS unit, and iteraate either until a desirable HDOP or 1 minute has elapsed.
+  String HDOP = "9999";
+  startTime = millis();
+  String GPSdata;
+
+  int i = 1;
+  while (endTime < 60000)
+  {
+  // Poll GPS unit, write result to SD card.
+    while(ss.available()>0){gps.encode(ss.read());} // Read the GPS stream
+    if(gps.location.isUpdated()) {  // If the position has updated, ...
+      GPSdata = GPSline();  // Get the GPS info
+      HDOP = getHDOPfromString(GPSdata);  // Extract the HDOP
+      if (millis()-startTime < fixTime) {fixTime = millis()-startTime;}
+      endTime = millis() - startTime;  // Record the time to the fix.
+      Serial.println("Run "+String(i)+": "+GPSdata+", Time: "+String(fixTime));
+      if (HDOP.toInt() < 50) {
+        break;
+      }
+      delay(980);
+      i++;          
+    }
+  }
+
+  //Write the GPS data to the SD card
+  File dataFile = SD.open("gpslog.csv", FILE_WRITE);
+  
+  if (dataFile) {    //if the file is available, write to it:
+    Serial.println("Writting GPS data to SD card.");
+    dataFile.println(GPSdata+","+String(fixTime)+String(endTime));
+    dataFile.close();
+  } else {     // print to the serial port too:
+    Serial.println("error opening SD card file.");
+  }
+
+  Serial.println("Done.");
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+void loop()
+{
+  
+}
+
+  
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Function to poll the GPS unit and get the location, quality info, and date/time.
+String GPSline()
+{
+  String gpsLat = "", gpsLon = "";
+  String sats = "", HDOP = "";
+  String gpsdate = "", gpstime = "";
+  
+  // Get GPS location fields or set NoData if invalid.
+  if (gps.location.isValid())
+  {
+    gpsLat = gps.location.lat();
+    gpsLon = gps.location.lng();
+  } else {
+    gpsLat = 9999.0;
+    gpsLon = 9999.0;
+  }
+
+  // Get GPS signal quality info
+  if (gps.satellites.isValid())
+  {
+    sats = gps.satellites.value();
+    HDOP = gps.hdop.value();
+  } else {
+    sats = 9999;
+    HDOP = 9999;
+  }
+
+  // Get GPS date and time
+  if (gps.date.isValid())
+  {
+    gpsdate = gps.date.value();
+    gpstime = gps.time.value();
+  } else {
+    gpsdate = 9999;
+    gpstime = 9999;
+  }
+
+  // return the full GPS line
+  return HDOP+","+gpsLat+","+gpsLon+","+sats+","+gpsdate+","+gpstime;
+}
+
+String getHDOPfromString(String GPSdata){
+  String HDOP = "9999";
+  int pos = GPSdata.indexOf(",");
+  HDOP = GPSdata.substring(0,pos);
+  return HDOP;
+}
+
