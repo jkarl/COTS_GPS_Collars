@@ -14,6 +14,9 @@
    - TinyGPS++ sample sketch by Mikal Hart
 */
 
+// Set up the done pin for the Low Power breakout
+const int DONEPIN = 5;
+
 // Set up GPS pins and baud rate
 static const int RXPin = 4, TXPin = 3;
 static const uint32_t GPSBaud = 9600;
@@ -37,6 +40,10 @@ void setup()
   Serial.println(F("by Jason Karl"));
   Serial.println();
 
+  // Initialize low power done pin
+  pinMode(DONEPIN, OUTPUT);
+  digitalWrite(DONEPIN, LOW);
+
   // Initialize SD card
   Serial.print("Initializing SD card...");
   if (!SD.begin(chipSelect)) {     // see if the card is present and can be initialized:
@@ -56,12 +63,12 @@ void setup()
   }
 
   // Set up the time logging for checking the GPS
-  unsigned long startTime, fixTime = 60000, endTime = 0;
+  unsigned long startTime, fixTime = 60000, bestTime = 0, endTime = 0;
 
   // Poll GPS unit, and iteraate either until a desirable HDOP or 1 minute has elapsed.
-  String HDOP = "9999";
+  String HDOP = "9999", bestHDOP = "9999";
   startTime = millis();
-  String GPSdata;
+  String GPSdata, bestGPS;
 
   int i = 1;
   while (endTime < 60000)
@@ -71,13 +78,18 @@ void setup()
     if(gps.location.isUpdated()) {  // If the position has updated, ...
       GPSdata = GPSline();  // Get the GPS info
       HDOP = getHDOPfromString(GPSdata);  // Extract the HDOP
+      if (HDOP.toInt() < bestHDOP.toInt()) {  // Hold the GPS fix with the best HDOP
+        bestGPS = GPSdata;
+        bestHDOP = HDOP;
+        bestTime = millis()-startTime;
+      }
       if (millis()-startTime < fixTime) {fixTime = millis()-startTime;}
       endTime = millis() - startTime;  // Record the time to the fix.
       Serial.println("Run "+String(i)+": "+GPSdata+", Time: "+String(fixTime));
-      if (HDOP.toInt() < 50) {
+      if (HDOP.toInt() < 250) {
         break;
       }
-      delay(980);
+      delay(1000);
       i++;          
     }
   }
@@ -87,25 +99,31 @@ void setup()
   
   if (dataFile) {    //if the file is available, write to it:
     Serial.println("Writting GPS data to SD card.");
-    dataFile.println(GPSdata+","+String(fixTime)+String(endTime));
+    Serial.println("Best HDOP: "+bestHDOP+", occurred at time: "+bestTime);
+    Serial.println("Best GPS fix: "+bestGPS);
+    dataFile.println(bestGPS+","+String(fixTime)+","+String(bestTime)+","+String(endTime));
     dataFile.close();
   } else {     // print to the serial port too:
     Serial.println("error opening SD card file.");
   }
 
+  // Return signal to the AdaFruit low power board.
   Serial.println("Done.");
+  digitalWrite(DONEPIN, HIGH);
+  delay(1);
+  digitalWrite(DONEPIN, LOW);
+  delay(1);
 }
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-void loop()
+void loop() // This is empty b/c using the AdaFruit low power breakout board.
 {
   
 }
 
   
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
 // Function to poll the GPS unit and get the location, quality info, and date/time.
 String GPSline()
 {
@@ -147,6 +165,8 @@ String GPSline()
   return HDOP+","+gpsLat+","+gpsLon+","+sats+","+gpsdate+","+gpstime;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Function to return the HDOP value from the GPSdata string.
 String getHDOPfromString(String GPSdata){
   String HDOP = "9999";
   int pos = GPSdata.indexOf(",");

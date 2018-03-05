@@ -31,13 +31,14 @@ The firmware has the following features:
 
 ### gpslog.csv data structure.
 If created by the firmware, the gpslog.csv file will not have a header row. The data attributes are:
-- HDOP (Horizontal dilution of precision)
+- HDOP (Horizontal dilution of precision = HDOP * 100)
 - latitude (Geographic Decimal Degrees, WGS84)
 - longitude (Geographic Decimal Degrees, WGS84)
 - satellites (number of satellites)
-- gpsdate (GPS date)
-- gpstime (GPS time)
+- gpsdate (GPS date in ddmmyy format)
+- gpstime (GPS time in GMT hhmmssss format)
 - fixTime (time to first GPS fix in milliseconds)
+- bestTime (time to the best GPS fix - i.e., the one that was actually recorded)
 - endTime (time to best fix in milliseconds)
 
 ### Resources
