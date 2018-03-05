@@ -7,10 +7,11 @@ Question: Is it possible to make a GPS collar for tracking livestock that will l
 3. microSD card breakout board
 4. 2GB MicroSD card
 5. USB power hookup breakout
-6. 5V 5400 mAh battery (or equivalent)??
+6. AdaFruit low power breakout board
+7. 5V 5400 mAh battery (or equivalent)??
 
 
-### Estimated power draw for livestock GPS collar components
+### Estimated power draw for prototype livestock GPS collar components
 |Part|Source|Unit Price|Power Draw|URL
 | --- | --- | --- | --- | ---
 |Adafruit TPL 5110 Power Timer Breakout|Adafruit.com|$4.95|20 µA | https://learn.adafruit.com/adafruit-tpl5110-power-timer-breakout/
@@ -18,7 +19,26 @@ Question: Is it possible to make a GPS collar for tracking livestock that will l
 |uBlox GPS|multiple sources|variable|40 mA|https://www.sparkfun.com/products/14198
 |Sparkfun Shifting µSD Breakout|Sparkfun.com|$4.95|??|https://www.sparkfun.com/products/13743
 
-Expected active power draw should be somewhere around 100mA for about a minute (time to acquire GPS signal and write valid coordinate to the SD card).
+Power draw for the arduino will depend on what it's doing, and I was unable to find power draw specs on the SD card breakout. I'm expecting active power draw should be somewhere around 100mA for about a minute (time to acquire GPS signal and write valid coordinate to the SD card).
+
+### Firmware Notes
+The firmware has the following features:
+ - Designed to work with the AdaFruit low-power breakout board, a hardware timer solution. Accordingly, all the action happens in the setup function so that the board can be powered down when done.
+ - The board first initializes the SD card and the GPS and begins polling the GPS unit.
+ - Data are written to the gpslog.csv file. If the file does not exist, it is created. If it does exist, new data are appended to the end of the file. File data structure is below.
+ - The GPS unit is polled continuously until either a minute has elapsed or the HDOP value drops below 5. When either criterion is satisfied, the best GPS coordinate (according to HDOP value) is written to the CSV file on the SD card.
+ - The firmware also tracks the time to first fix and the time to best fix and writes these values to the gpslog.csv file.
+
+### gpslog.csv data structure.
+If created by the firmware, the gpslog.csv file will not have a header row. The data attributes are:
+- HDOP (Horizontal dilution of precision)
+- latitude (Geographic Decimal Degrees, WGS84)
+- longitude (Geographic Decimal Degrees, WGS84)
+- satellites (number of satellites)
+- gpsdate (GPS date)
+- gpstime (GPS time)
+- fixTime (time to first GPS fix in milliseconds)
+- endTime (time to best fix in milliseconds)
 
 ### Resources
 - [Arduino SD library](https://www.arduino.cc/en/Reference/SDCardNotes)

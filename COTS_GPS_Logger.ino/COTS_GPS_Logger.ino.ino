@@ -2,17 +2,16 @@
 #include <SPI.h>
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
-#include "LowPower.h"
 
 /*
    Code for creating a simple GPS data logger from a uBLOX drone GPS unit, Arduino Pro Mini,
-   and a microSD module. This code uses the LowPower library to minimize power draw and obtain
-   GPS readings only at specified intervals. 
+   and a microSD module. This code establishes a GPS connection in the setup function and
+   measures the time it takes to go from GPS initialization to active signal, and then to
+   a HDOP of less than 5. 
 
    This code draws from the following source scripts:
    - https://www.arduino.cc/en/Tutorial/Datalogger
    - TinyGPS++ sample sketch by Mikal Hart
-   - LowPower sample sketch
 */
 
 // Set up GPS pins and baud rate
@@ -27,19 +26,25 @@ SoftwareSerial ss(RXPin, TXPin);
 const int chipSelect = 8;
 
 
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 void setup()
 {
+  // Set up some logging to the serial monitor.
   Serial.begin(115200);
   Serial.println(F("COTS_GPS_Logger.ino"));
-  Serial.println(F("A simple GPS logger module using TinyGPS++, LowPower, and SD"));
+  Serial.println(F("A simple GPS logger module using TinyGPS++, and SD"));
   Serial.print(F("Logs GPS data to a SD card")); Serial.println(TinyGPSPlus::libraryVersion());
   Serial.println(F("by Jason Karl"));
   Serial.println();
 
+  // Initialize SD card
+  Serial.print("Initializing SD card...");
+  if (!SD.begin(chipSelect)) {     // see if the card is present and can be initialized:
+    Serial.println("Card failed, or not present");
+    return;      // don't do anything more:
+  }
+  Serial.println("card initialized.");
+  
   // Initialize & Check GPS
   Serial.println("Initializing GPS...");
   ss.begin(GPSBaud);
@@ -50,47 +55,55 @@ void setup()
     while(true);
   }
 
+  // Set up the time logging for checking the GPS
+  unsigned long startTime, fixTime = 60000, endTime = 0;
 
-  // Initialize SD card
-  Serial.print("Initializing SD card...");
-  // see if the card is present and can be initialized:
-  if (!SD.begin(chipSelect)) {
-    Serial.println("Card failed, or not present");
-    // don't do anything more:
-    return;
+  // Poll GPS unit, and iteraate either until a desirable HDOP or 1 minute has elapsed.
+  String HDOP = "9999";
+  startTime = millis();
+  String GPSdata;
+
+  int i = 1;
+  while (endTime < 60000)
+  {
+  // Poll GPS unit, write result to SD card.
+    while(ss.available()>0){gps.encode(ss.read());} // Read the GPS stream
+    if(gps.location.isUpdated()) {  // If the position has updated, ...
+      GPSdata = GPSline();  // Get the GPS info
+      HDOP = getHDOPfromString(GPSdata);  // Extract the HDOP
+      if (millis()-startTime < fixTime) {fixTime = millis()-startTime;}
+      endTime = millis() - startTime;  // Record the time to the fix.
+      Serial.println("Run "+String(i)+": "+GPSdata+", Time: "+String(fixTime));
+      if (HDOP.toInt() < 50) {
+        break;
+      }
+      delay(980);
+      i++;          
+    }
   }
-  Serial.println("card initialized.");
+
+  //Write the GPS data to the SD card
+  File dataFile = SD.open("gpslog.csv", FILE_WRITE);
   
+  if (dataFile) {    //if the file is available, write to it:
+    Serial.println("Writting GPS data to SD card.");
+    dataFile.println(GPSdata+","+String(fixTime)+String(endTime));
+    dataFile.close();
+  } else {     // print to the serial port too:
+    Serial.println("error opening SD card file.");
+  }
+
+  Serial.println("Done.");
 }
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 void loop()
 {
-  // This sketch displays information every time a new sentence is correctly encoded.
-  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
-  Serial.println("I'm awake again!!!");
-  Serial.println(".....");
-
-  // Poll GPS unit, write result to SD card.
-  while (ss.available() > 0)
-    if (gps.encode(ss.read()))
-    {
-      //displayInfo();
-      String GPSdata = GPSline();
-      File dataFile = SD.open("gpslog.csv", FILE_WRITE);
-      // if the file is available, write to it:
-      if (dataFile) {
-        Serial.println("Writting GPS data to SD card.");
-        dataFile.println(GPSdata);
-        dataFile.close();
-        // print to the serial port too:
-        Serial.println(GPSdata);
-      } else {
-        Serial.println("error opening SD card file.");
-      }
-    }
+  
 }
 
+  
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Function to poll the GPS unit and get the location, quality info, and date/time.
@@ -106,8 +119,8 @@ String GPSline()
     gpsLat = gps.location.lat();
     gpsLon = gps.location.lng();
   } else {
-    gpsLat = -9999.0;
-    gpsLon = -9999.0;
+    gpsLat = 9999.0;
+    gpsLon = 9999.0;
   }
 
   // Get GPS signal quality info
@@ -116,8 +129,8 @@ String GPSline()
     sats = gps.satellites.value();
     HDOP = gps.hdop.value();
   } else {
-    sats = -9999;
-    HDOP = -9999;
+    sats = 9999;
+    HDOP = 9999;
   }
 
   // Get GPS date and time
@@ -126,74 +139,18 @@ String GPSline()
     gpsdate = gps.date.value();
     gpstime = gps.time.value();
   } else {
-    gpsdate = -9999;
-    gpstime = -9999;
+    gpsdate = 9999;
+    gpstime = 9999;
   }
 
   // return the full GPS line
-  return gpsLat+","+gpsLon+","+sats+","+HDOP+","+gpsdate+","+gpstime;
+  return HDOP+","+gpsLat+","+gpsLon+","+sats+","+gpsdate+","+gpstime;
 }
 
-void displayInfo()
-{
-  Serial.print(F("Location: ")); 
-  if (gps.location.isValid())
-  {
-    Serial.print(gps.location.lat(), 6);
-    Serial.print(F(","));
-    Serial.print(gps.location.lng(), 6);
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-
-  Serial.print(F("  Satellite Info: "));
-  if (gps.satellites.isValid())
-  {
-    Serial.print(F("Satellites: "));
-    Serial.print(gps.satellites.value());
-    Serial.print(F(", HDOP: "));
-    Serial.print(gps.hdop.value());
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-
-  Serial.print(F("  Date/Time: "));
-  if (gps.date.isValid())
-  {
-    Serial.print(gps.date.month());
-    Serial.print(F("/"));
-    Serial.print(gps.date.day());
-    Serial.print(F("/"));
-    Serial.print(gps.date.year());
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-
-  Serial.print(F(" "));
-  if (gps.time.isValid())
-  {
-    if (gps.time.hour() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.hour());
-    Serial.print(F(":"));
-    if (gps.time.minute() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.minute());
-    Serial.print(F(":"));
-    if (gps.time.second() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.second());
-    Serial.print(F("."));
-    if (gps.time.centisecond() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.centisecond());
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-
-  Serial.println();
+String getHDOPfromString(String GPSdata){
+  String HDOP = "9999";
+  int pos = GPSdata.indexOf(",");
+  HDOP = GPSdata.substring(0,pos);
+  return HDOP;
 }
+
