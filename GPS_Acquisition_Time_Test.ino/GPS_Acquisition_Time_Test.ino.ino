@@ -3,17 +3,6 @@
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 
-/*
-   Code for creating a simple GPS data logger from a uBLOX drone GPS unit, Arduino Pro Mini,
-   and a microSD module. This code establishes a GPS connection in the setup function and
-   measures the time it takes to go from GPS initialization to active signal, and then to
-   a HDOP of less than 5. 
-
-   This code draws from the following source scripts:
-   - https://www.arduino.cc/en/Tutorial/Datalogger
-   - TinyGPS++ sample sketch by Mikal Hart
-*/
-
 // Set up the done pin for the Low Power breakout
 const int DONEPIN = 5;
 
@@ -34,71 +23,69 @@ void setup()
 {
   // Set up some logging to the serial monitor.
   Serial.begin(115200);
-  Serial.println(F("COTS_GPS_Logger.ino"));
-  Serial.println(F("A simple GPS logger module using TinyGPS++, and SD"));
-  Serial.print(F("Logs GPS data to a SD card")); Serial.println(TinyGPSPlus::libraryVersion());
-  Serial.println(F("by Jason Karl"));
-  Serial.println();
 
   // Initialize low power done pin
   pinMode(DONEPIN, OUTPUT);
   digitalWrite(DONEPIN, LOW);
 
   // Initialize SD card
-  Serial.print("Initializing SD card...");
+  //Serial.print("Initializing SD card...");
   if (!SD.begin(chipSelect)) {     // see if the card is present and can be initialized:
-    Serial.println("Card failed, or not present");
+    //Serial.println("Card failed, or not present");
     return;      // don't do anything more:
   }
-  Serial.println("card initialized.");
+  //Serial.println("card initialized.");
   
   // Initialize & Check GPS
-  Serial.println("Initializing GPS...");
+  //Serial.println("Initializing GPS...");
   ss.begin(GPSBaud);
   // Check for GPS connected.
   if (millis() > 5000 && gps.charsProcessed() < 10)
   {
-    Serial.println(F("No GPS detected: check wiring."));
+    //Serial.println(F("No GPS detected: check wiring."));
     while(true);
   }
 
   // Set up the time logging for checking the GPS
-  unsigned long startTime, fixTime = 60000, bestTime = 0, endTime = 0;
+  unsigned long startTime = millis(), fixTime = 60000, bestTime = 0, endTime = 0;
 
   // Poll GPS unit, and iteraate either until a desirable HDOP or 1 minute has elapsed.
   String HDOP = "9999", bestHDOP = "9999";
-  startTime = millis();
   String GPSdata, bestGPS;
 
+  //Serial.println("GPS Initialized. Start polling...");
   int i = 1;
   while (endTime < 60000)
   {
   // Poll GPS unit, write result to SD card.
     while(ss.available()>0){gps.encode(ss.read());} // Read the GPS stream
     if(gps.location.isUpdated()) {  // If the position has updated, ...
+      if (millis()-startTime<fixTime) {fixTime=millis()-startTime;}  // on first loop, means the GPS as acquired a fix. Set this as fixTime
       GPSdata = GPSline();  // Get the GPS info
       HDOP = getHDOPfromString(GPSdata);  // Extract the HDOP
-      if (HDOP.toInt() < bestHDOP.toInt()) {  // Hold the GPS fix with the best HDOP
+      if (HDOP.toInt() <= bestHDOP.toInt()) {  // Hold the GPS fix with the best HDOP
         bestGPS = GPSdata;
         bestHDOP = HDOP;
         bestTime = millis()-startTime;
       }
-      if (millis()-startTime < fixTime) {fixTime = millis()-startTime;}
-      endTime = millis() - startTime;  // Record the time to the fix.
-      Serial.println("Run "+String(i)+": "+GPSdata+", Time: "+String(fixTime));
+      Serial.println("Run "+String(i)+": "+GPSdata+", Time: "+String(millis()-startTime)+", HDOP: "+HDOP);
       if (HDOP.toInt() < 250) {
         break;
       }
-      delay(1000);
+      // delay(1000);
       i++;          
     }
+    endTime = millis()-startTime;   // set the time that the loop ended (either b/c time is up or HDOP criteria met).
   }
 
+
+
+  
   //Write the GPS data to the SD card
   File dataFile = SD.open("gpslog.csv", FILE_WRITE);
   
   if (dataFile) {    //if the file is available, write to it:
-    Serial.println("Writting GPS data to SD card.");
+    //Serial.println("Writting GPS data to SD card.");
     Serial.println("Best HDOP: "+bestHDOP+", occurred at time: "+bestTime);
     Serial.println("Best GPS fix: "+bestGPS);
     dataFile.println(bestGPS+","+String(fixTime)+","+String(bestTime)+","+String(endTime));
@@ -134,8 +121,8 @@ String GPSline()
   // Get GPS location fields or set NoData if invalid.
   if (gps.location.isValid())
   {
-    gpsLat = gps.location.lat();
-    gpsLon = gps.location.lng();
+    gpsLat = String(gps.location.lat(),6);
+    gpsLon = String(gps.location.lng(),6);
   } else {
     gpsLat = 9999.0;
     gpsLon = 9999.0;
@@ -167,10 +154,10 @@ String GPSline()
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Function to return the HDOP value from the GPSdata string.
-String getHDOPfromString(String GPSdata){
+String getHDOPfromString(String GPSstring){
   String HDOP = "9999";
-  int pos = GPSdata.indexOf(",");
-  HDOP = GPSdata.substring(0,pos);
+  int pos = GPSstring.indexOf(",");
+  HDOP = GPSstring.substring(0,pos);
   return HDOP;
 }
 

@@ -64,11 +64,13 @@ void setup()
   String GPSdata;
 
   int i = 1;
+  Serial.println("Polling GPS for data.");
   while (endTime < 60000)
   {
   // Poll GPS unit, write result to SD card.
     while(ss.available()>0){gps.encode(ss.read());} // Read the GPS stream
     if(gps.location.isUpdated()) {  // If the position has updated, ...
+      Serial.println("test");
       GPSdata = GPSline();  // Get the GPS info
       HDOP = getHDOPfromString(GPSdata);  // Extract the HDOP
       if (millis()-startTime < fixTime) {fixTime = millis()-startTime;}
@@ -98,7 +100,7 @@ void setup()
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-void loop()
+void loop()  // Nothing in here b/c we're using the low-power breakout board.
 {
   
 }
