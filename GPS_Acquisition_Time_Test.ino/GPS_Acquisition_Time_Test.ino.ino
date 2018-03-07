@@ -32,6 +32,7 @@ void setup()
   //Serial.print("Initializing SD card...");
   if (!SD.begin(chipSelect)) {     // see if the card is present and can be initialized:
     //Serial.println("Card failed, or not present");
+    doneSignal();
     return;      // don't do anything more:
   }
   //Serial.println("card initialized.");
@@ -43,6 +44,7 @@ void setup()
   if (millis() > 5000 && gps.charsProcessed() < 10)
   {
     //Serial.println(F("No GPS detected: check wiring."));
+    doneSignal();
     while(true);
   }
 
@@ -68,7 +70,7 @@ void setup()
         bestHDOP = HDOP;
         bestTime = millis()-startTime;
       }
-      Serial.println("Run "+String(i)+": "+GPSdata+", Time: "+String(millis()-startTime)+", HDOP: "+HDOP);
+      //Serial.println("Run "+String(i)+": "+GPSdata+", Time: "+String(millis()-startTime)+", HDOP: "+HDOP);
       if (HDOP.toInt() < 250) {
         break;
       }
@@ -86,20 +88,17 @@ void setup()
   
   if (dataFile) {    //if the file is available, write to it:
     //Serial.println("Writting GPS data to SD card.");
-    Serial.println("Best HDOP: "+bestHDOP+", occurred at time: "+bestTime);
-    Serial.println("Best GPS fix: "+bestGPS);
+    //Serial.println("Best HDOP: "+bestHDOP+", occurred at time: "+bestTime);
+    //Serial.println("Best GPS fix: "+bestGPS);
     dataFile.println(bestGPS+","+String(fixTime)+","+String(bestTime)+","+String(endTime));
     dataFile.close();
   } else {     // print to the serial port too:
-    Serial.println("error opening SD card file.");
+    //Serial.println("error opening SD card file.");
   }
 
   // Return signal to the AdaFruit low power board.
   Serial.println("Done.");
-  digitalWrite(DONEPIN, HIGH);
-  delay(1);
-  digitalWrite(DONEPIN, LOW);
-  delay(1);
+  doneSignal();
 }
 
 
@@ -161,3 +160,11 @@ String getHDOPfromString(String GPSstring){
   return HDOP;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Function to send the done signal to the low power board.
+void doneSignal() {
+  digitalWrite(DONEPIN, HIGH);
+  delay(1);
+  digitalWrite(DONEPIN, LOW);
+  delay(1);
+}
