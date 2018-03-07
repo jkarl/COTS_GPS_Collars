@@ -88,7 +88,7 @@ void setup()
   
   if (dataFile) {    //if the file is available, write to it:
     //Serial.println("Writting GPS data to SD card.");
-    //Serial.println("Best HDOP: "+bestHDOP+", occurred at time: "+bestTime);
+    //Sebrial.println("Best HDOP: "+bestHDOP+", occurred at time: "+bestTime);
     //Serial.println("Best GPS fix: "+bestGPS);
     dataFile.println(bestGPS+","+String(fixTime)+","+String(bestTime)+","+String(endTime));
     dataFile.close();
