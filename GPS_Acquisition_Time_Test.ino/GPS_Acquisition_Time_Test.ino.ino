@@ -4,7 +4,7 @@
 #include <SoftwareSerial.h>
 
 // Set up the done pin for the Low Power breakout
-const int DONEPIN = 5;
+const int DONEPIN = 10;
 
 // Set up GPS pins and baud rate
 static const int RXPin = 4, TXPin = 3;
@@ -55,7 +55,7 @@ void setup()
   String HDOP = "9999", bestHDOP = "9999";
   String GPSdata, bestGPS;
 
-  //Serial.println("GPS Initialized. Start polling...");
+  Serial.println("GPS Initialized. Start polling...");
   int i = 1;
   while (endTime < 60000)
   {
@@ -70,7 +70,7 @@ void setup()
         bestHDOP = HDOP;
         bestTime = millis()-startTime;
       }
-      //Serial.println("Run "+String(i)+": "+GPSdata+", Time: "+String(millis()-startTime)+", HDOP: "+HDOP);
+      Serial.println("Run "+String(i)+": "+GPSdata+", Time: "+String(millis()-startTime)+", HDOP: "+HDOP);
       if (HDOP.toInt() < 250) {
         break;
       }
@@ -79,9 +79,6 @@ void setup()
     }
     endTime = millis()-startTime;   // set the time that the loop ended (either b/c time is up or HDOP criteria met).
   }
-
-
-
   
   //Write the GPS data to the SD card
   File dataFile = SD.open("gpslog.csv", FILE_WRITE);
