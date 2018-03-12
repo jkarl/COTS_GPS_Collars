@@ -4,7 +4,7 @@
 #include <SoftwareSerial.h>
 
 // Set up the done pin for the Low Power breakout
-const int DONEPIN = 10;
+const int DONEPIN = 5;
 
 // Set up GPS pins and baud rate
 static const int RXPin = 4, TXPin = 3;

@@ -1,14 +1,19 @@
 # COTS_GPS_Collars
 Question: Is it possible to make a GPS collar for tracking livestock that will last up to 3 months on a single battery and cost less than $75 per collar using commercial off-the-shelf (COTS) parts?
 
+## Working prototype
+This ugly thing is the working prototype on a breadboard. It will, of course be packaged much neater and smaller for deployment, but hey, it works!
+
+![](./prototype.jpg)
+
 ### Electronics Parts List
 1. Arduino Pro Mini
-2. uBLOX Drone GPS
-3. microSD card breakout board
+2. uBLOX M8N Drone GPS
+3. Sparkfun level-shifting microSD card breakout board
 4. 2GB MicroSD card
 5. USB power hookup breakout
 6. AdaFruit low power breakout board
-7. 5V 5400 mAh battery (or equivalent)??
+7. 5V 5600 mAh battery (or equivalent)??
 
 
 ### Estimated power draw for prototype livestock GPS collar components
@@ -20,6 +25,9 @@ Question: Is it possible to make a GPS collar for tracking livestock that will l
 |Sparkfun Shifting µSD Breakout|Sparkfun.com|$4.95|??|https://www.sparkfun.com/products/13743
 
 Power draw for the arduino will depend on what it's doing, and I was unable to find power draw specs on the SD card breakout. I'm expecting active power draw should be somewhere around 100mA for about a minute (time to acquire GPS signal and write valid coordinate to the SD card).
+
+### Empirical measurements of power consumption
+Measuring power consumption of the prototype with a Watts App power meter determined that instantaneous power draw was __~65mA__! This is way better than I was expecting. Power consumption over a 24-hour period at 1 reading every 10 minutes was __35 mAh__. This is also pretty fantastic. With a 2200 mAh battery (figuring 30% battery loss due to demonic intrusion), that would translate into 44 days of runtime. A 5600 mAh battery (again assuming 30% battery loss) would give 112 days of runtime. Alternatively, increasing to GPS readings every 5 minutes should give 56 days of runtime.
 
 ### Firmware Notes
 The firmware has the following features:
