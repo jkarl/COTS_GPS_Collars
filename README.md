@@ -4,7 +4,7 @@ Question: Is it possible to make a GPS collar for tracking livestock that will l
 ## Working prototype
 This ugly thing is the working prototype on a breadboard. It will, of course be packaged much neater and smaller for deployment, but hey, it works!
 
-![](./prototype.jpg)
+![](./prototype.jpg){:height="50%" width="50%"}
 
 ### Electronics Parts List
 1. Arduino Pro Mini
