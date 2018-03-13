@@ -1,0 +1,102 @@
+---
+title: "Data Analysis from GPS Collar Prototype"
+output: github_document
+---
+Analysis of properties of the GPS data from the prototype GPS collar
+12 March 2018
+
+With the prototype GPS and the firmware dated 3/11/2018, I conducted a series of tests to empirically measure 1) power consumption over a longer time period (24 hr) to get a handle on battery capacity, 2) time to first average fix and time to best fix, and 3) quality of the GPS readings in terms of average HDOP and spread around the average GPS reading from a stationary prototype.
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(rgdal)
+library(dplyr)
+```
+
+
+```{r data, echo=FALSE}
+# Load Data
+path <- "C:\\Users\\Jason Karl\\Documents\\GitHub\\COTS_GPS_Collars\\COTS_GPS_Collars\\GPS_Evaluation"
+file <- "GPSLOG.20180312.csv"
+gps.data <- read.csv(paste(path,file,sep="\\"),header=T,stringsAsFactors=F)
+
+# Check attribute names
+names(gps.data)
+
+# Reproject lat/lon data to UTM Zone 11
+coordinates(gps.data) <- ~Lon+Lat
+proj4string(gps.data) <- CRS("+proj=longlat +datum=WGS84")
+gps.data.u11 <- spTransform(gps.data, CRS=CRS("+proj=utm +zone=11 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"))
+```
+
+## Summary Statistics for GPS Test Data
+
+
+```{r summaries, echo=FALSE}
+# Calc difference from average coordinates
+meanLat <- mean(gps.data.u11$Lat)
+meanLon <- mean(gps.data.u11$Lon)
+sdLat <- sd(gps.data.u11$Lat)
+sdLon <- sd(gps.data.u11$Lon)
+
+gps.data.u11$diffLat <- meanLat - gps.data.u11$Lat
+gps.data.u11$diffLon <- meanLon - gps.data.u11$Lon
+gps.data.u11$diffdist <- sqrt(gps.data.u11$diffLat^2+gps.data.u11$diffLon^2)
+```
+
+
+
+```{r plots}
+plot.df <- data.frame(gps.data.u11)
+
+g1 <- ggplot(data=plot.df, aes(x=FixTime/1000))+geom_histogram(binwidth=5)+
+  geom_vline(xintercept = quantile(plot.df$FixTime/1000, 0.9))+
+  labs(title="Time to First Fix", x="Seconds", y="# of Fixes")
+g1
+
+g2 <- ggplot(data=plot.df, aes(x=BestTime/1000))+geom_histogram(binwidth=5)+
+  geom_vline(xintercept = quantile(plot.df$BestTime/1000, 0.9))+
+  labs(title="Time to Best Fix", x="Seconds", y="# of Fixes")
+g2
+
+
+g <- ggplot(data=plot.df[plot.df$HDOP<500,], aes(x=diffLon,y=diffLat,color=HDOP))+geom_point()+
+  scale_color_gradient2(low="#006837", mid="#fee08b", high="#a50026", midpoint=200)+
+  stat_ellipse(level=0.9)+geom_hline(yintercept = 0) + geom_vline(xintercept = 0)+
+  labs(title="GPS positional error", x="Difference from Avg Longitude (m)", y="Difference from Avg Latitude (m)")
+g
+```
+
+### Trend of positional accuracy by HDOP?
+Yeah, but pretty slight.
+```{r}
+ggplot(data=plot.df[plot.df$HDOP<500,], aes(x=HDOP, y=diffdist))+geom_point()+geom_smooth(method="lm")
+```
+
+
+### Is there a trend of positional error by time of day?
+Nope.
+
+```{r}
+ggplot(data=plot.df, aes(x=GPSTime, y=diffdist))+geom_point()
+```
+```{r, include=FALSE}
+mean(plot.df$FixTime)
+quantile(plot.df$FixTime, 0.9)
+
+mean(plot.df$BestTime)
+quantile(plot.df$BestTime, 0.9)
+
+mean(plot.df$diffdist)
+quantile(plot.df$diffdist, 0.9)
+```
+
+## Takehome messages
+For 10-minute fix intervals with the GPS unit inside the house (I'm kind of surprised it even got a fix):
+- Average time to first fix was 11 seconds with 90% of first fixes within 27.3 seconds.
+- Average time to best fix was 13 seconds with 90% of first fixes within 31.3 seconds.
+- Average positional error was 14.4m with 90% of GPS readings within 29.4m of the average of all GPS readings.
+
+
+
