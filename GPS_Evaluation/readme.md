@@ -21,3 +21,13 @@ Second test was run with GPS set to record at 6-minute intervals. GPS was placed
 <img src="./5min_outdoor_fixtime.png" width="50%" height="50%">
 
 <img src="./5min_outdoor_poserror.png" width="50%" height="50%">
+
+### 5-minute interval indoor test
+Second test was run with GPS set to record at 6-minute intervals. GPS was placed indoors (same location as 10-min indoor test) and run for a total of 12 hours. A total 120 readings were taken during that time, and no failures to record a GPS location occurred. The following summarizes the results of this trial:
+- Average time to first fix was 12.4 seconds with 90% of first fixes within 23.8 seconds.
+- Average time to best fix was 13.7 seconds with 90% of first fixes within 30.9 seconds.
+- Average positional error was 17.8m with 90% of GPS readings within 39.2m of the average of all GPS readings.
+
+<img src="./5min_indoor_fixtime.png" width="50%" height="50%">
+
+<img src="./5min_indoor_poserror.png" width="50%" height="50%">

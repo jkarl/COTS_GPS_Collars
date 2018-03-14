@@ -18,7 +18,8 @@ library(dplyr)
 ```{r data, echo=FALSE}
 # Load Data
 path <- "C:\\Users\\Jason Karl\\Documents\\GitHub\\COTS_GPS_Collars\\COTS_GPS_Collars\\GPS_Evaluation"
-file <- "GPSLOG_5min_Outdoor.20180313.csv"
+file <- "GPSLOG_5min_Indoor.20180313.csv" #"GPSLOG_5min_Outdoor.20180313.csv"
+title <- "5-min Indoor"
 gps.data <- read.csv(paste(path,file,sep="\\"),header=T,stringsAsFactors=F)
 
 # Check attribute names
@@ -52,19 +53,19 @@ plot.df <- data.frame(gps.data.u11)
 
 g1 <- ggplot(data=plot.df, aes(x=FixTime/1000))+geom_histogram(binwidth=5)+
   geom_vline(xintercept = quantile(plot.df$FixTime/1000, 0.9))+
-  labs(title="Time to First Fix", x="Seconds", y="# of Fixes")
+  labs(title=paste("Time to First Fix",title,sep=" - "), x="Seconds", y="# of Fixes")
 g1
 
 g2 <- ggplot(data=plot.df, aes(x=BestTime/1000))+geom_histogram(binwidth=5)+
   geom_vline(xintercept = quantile(plot.df$BestTime/1000, 0.9))+
-  labs(title="Time to Best Fix - 10 minute fixes, indoors", x="Seconds", y="# of Fixes")
+  labs(title=paste("Time to Best Fix",title,sep=" - "), x="Seconds", y="# of Fixes")
 g2
 
 
 g <- ggplot(data=plot.df[plot.df$HDOP<500,], aes(x=diffLon,y=diffLat,color=HDOP))+geom_point()+
   scale_color_gradient2(low="#006837", mid="#fee08b", high="#a50026", midpoint=200)+
   stat_ellipse(level=0.9)+geom_hline(yintercept = 0) + geom_vline(xintercept = 0)+
-  labs(title="GPS positional error - 10 minute fixes, indoors", x="Difference from Avg Longitude (m)", y="Difference from Avg Latitude (m)")
+  labs(title=paste("GPS positional error",title,sep=" - "), x="Difference from Avg Longitude (m)", y="Difference from Avg Latitude (m)")
 g
 ```
 
@@ -82,14 +83,14 @@ Nope.
 ggplot(data=plot.df, aes(x=GPSTime, y=diffdist))+geom_point()
 ```
 ```{r, include=FALSE}
-mean(plot.df$FixTime)
-quantile(plot.df$FixTime, 0.9)
+print(mean(plot.df$FixTime))
+print(quantile(plot.df$FixTime, 0.9))
 
-mean(plot.df$BestTime)
-quantile(plot.df$BestTime, 0.9)
+print(mean(plot.df$BestTime))
+print(quantile(plot.df$BestTime, 0.9))
 
-mean(plot.df$diffdist)
-quantile(plot.df$diffdist, 0.9)
+print(mean(plot.df$diffdist))
+print(quantile(plot.df$diffdist, 0.9))
 ```
 
 ## Takehome messages
