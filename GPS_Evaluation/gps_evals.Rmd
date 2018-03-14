@@ -18,7 +18,7 @@ library(dplyr)
 ```{r data, echo=FALSE}
 # Load Data
 path <- "C:\\Users\\Jason Karl\\Documents\\GitHub\\COTS_GPS_Collars\\COTS_GPS_Collars\\GPS_Evaluation"
-file <- "GPSLOG.20180312.csv"
+file <- "GPSLOG_5min_Outdoor.20180313.csv"
 gps.data <- read.csv(paste(path,file,sep="\\"),header=T,stringsAsFactors=F)
 
 # Check attribute names
@@ -57,14 +57,14 @@ g1
 
 g2 <- ggplot(data=plot.df, aes(x=BestTime/1000))+geom_histogram(binwidth=5)+
   geom_vline(xintercept = quantile(plot.df$BestTime/1000, 0.9))+
-  labs(title="Time to Best Fix", x="Seconds", y="# of Fixes")
+  labs(title="Time to Best Fix - 10 minute fixes, indoors", x="Seconds", y="# of Fixes")
 g2
 
 
 g <- ggplot(data=plot.df[plot.df$HDOP<500,], aes(x=diffLon,y=diffLat,color=HDOP))+geom_point()+
   scale_color_gradient2(low="#006837", mid="#fee08b", high="#a50026", midpoint=200)+
   stat_ellipse(level=0.9)+geom_hline(yintercept = 0) + geom_vline(xintercept = 0)+
-  labs(title="GPS positional error", x="Difference from Avg Longitude (m)", y="Difference from Avg Latitude (m)")
+  labs(title="GPS positional error - 10 minute fixes, indoors", x="Difference from Avg Longitude (m)", y="Difference from Avg Latitude (m)")
 g
 ```
 

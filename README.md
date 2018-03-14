@@ -29,6 +29,8 @@ Power draw for the arduino will depend on what it's doing, and I was unable to f
 ### Empirical measurements of power consumption
 Measuring power consumption of the prototype with a Watts App power meter determined that instantaneous power draw was __~65mA__! This is way better than I was expecting. Power consumption over a 24-hour period at 1 reading every 10 minutes was __35 mAh__. This is also pretty fantastic. With a 2200 mAh battery (figuring 30% battery loss due to demonic intrusion), that would translate into 44 days of runtime. A 5600 mAh battery (again assuming 30% battery loss) would give 112 days of runtime. Alternatively, increasing to GPS readings every 5 minutes should give 56 days of runtime.
 
+UPDATE: At 6-minute intervals (best I could do with the resistors I had on hand) in an outdoor test, power consumption over a 16 hour test was 19 mAh. Calculating up for a 24-hour period would put the daily power rate at __28.5 mAh__. Lower power consumption for a shorter interval (i.e., the unit completed 10 cycles per hour vs 6 cycles per hour at 10-minute interval) was due to the fact that the GPS unit was getting fixes much quicker. Two possible reasons for this: 1) outdoor test vs. previous indoor test, 2) 6-minute interval was within the "warm-start" time of the GPS.
+
 ### Firmware Notes
 The firmware has the following features:
  - Designed to work with the AdaFruit low-power breakout board, a hardware timer solution. Accordingly, all the action happens in the setup function so that the board can be powered down when done.
