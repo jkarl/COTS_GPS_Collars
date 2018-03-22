@@ -1,7 +1,7 @@
 # GPS Collar Assembly Instructions
 Below are the steps I've worked out so far for assembling the GPS collars. Unless otherwise noted, the order of the steps is not critical. Also, there may be other/better ways of putting these GPS loggers together. Hopefully this document will continue to evolve as better approaches are figured out.
 
-### Solder headers onto the Arduino
+## Solder headers onto the Arduino
 We're using an Arduino Pro Mini 5v that needs a FTDI board to write the firmware to the Arduino. For that we need to attach headers to the Arduino.
 1. Discard (i.e., put in the parts bin) any male headers that may have come with the Arduino. We will use a 6-position 90-deg female header.
 <img src="./img/header1.jpg" width="50%" height="50%">
@@ -11,7 +11,7 @@ We're using an Arduino Pro Mini 5v that needs a FTDI board to write the firmware
 4. Gently bend the header to make sure it is parallel to the Arduino board. Then trim the excess pin material off the bottom of the board.
 <img src="./img/header3.jpg" width="50%" height="50%">
 
-### Attach wiring to the Arduino
+## Attach wiring to the Arduino
 The next step is to attach the wiring to the Arduino board that we will use for power, the SD card board, and the done pin back to the timer board. __NOTE: The unit will not work if the wires are soldered to the wrong pins! Pay attention and take your time soldering these on.__
 1. Cut a 2.5" to 3" section of the rainbow ribbon cable.
 <img src="./img/wiring1.jpg" width="50%" height="50%">
@@ -36,4 +36,21 @@ The next step is to attach the wiring to the Arduino board that we will use for 
 <img src="./img/wiring3.jpg" width="50%" height="50%">
 6. Trim off the excess wire close to the board.
 
-### Attach leads and capacitor to the USB power board
+## Attach leads and capacitor to the USB power board
+This step preps the USB power board that will feed power to the timer board. This is a pretty simple step that involves attaching positive and ground leads and a 100 microF capacitor between the +5V and ground. The capacitor serves to stabilize the power from the USB. I'm not entirely sure how this works (Hey, I'm an ecologist, remember), but not having the capacitor can cause the timer board to not initialize properly and the power "dribbles" (for lack of a better term) onto the board, causing the Arduino LED to just flutter dimly and the whole thing becomes a paperweight.
+1. Cut approximately 4" pieces of red and black hookup wire and strip 1/4" insulation from one end of each. Twist and/or tin the ends of these wires.
+<img src="./img/power1.jpg" width="50%" height="50%">
+2. Starting with the negative lead, insert the black wire up through the bottom of the USB power board at the GND hole. Then insert the negative lead (short one, also the side of the cap with the gray stripe) of the capacitor in through the same hole. It's snug, but should fit fine. Leave about 1/8" of the capacitor's negative lead exposed on the bottom of the board so you can position the capacitor after soldering.
+3. Solder the black wire and capacitor's negative lead in place. Trim the excess.
+4. Working carefully, insert the red wire in the 5V hole. Feed the positive lead of the capacitor into the same hole and solder in place. Trim the excess. __NOTE: Work carefully with the capacitor to avoid overworking and stressing the leads, potentially breaking one of them off.__
+<img src="./img/power2.jpg" width="50%" height="50%">
+
+## Prepare the timer board
+
+## Hook up the SD card board
+
+## Connect the GPS
+
+## Connect the positive and negative leads
+
+## Positioning and packaging the device
