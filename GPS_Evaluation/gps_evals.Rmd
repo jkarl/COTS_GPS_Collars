@@ -18,7 +18,7 @@ library(dplyr)
 ```{r data, echo=FALSE}
 # Load Data
 path <- "C:\\Users\\Jason Karl\\Documents\\GitHub\\COTS_GPS_Collars\\COTS_GPS_Collars\\GPS_Evaluation"
-file <- "GPSLOG_5min_Indoor.20180313.csv" #"GPSLOG_5min_Outdoor.20180313.csv"
+file <- "GPSLOG_5min_Indoor.20180314.csv" #"GPSLOG_5min_Outdoor.20180313.csv"
 title <- "5-min Indoor"
 gps.data <- read.csv(paste(path,file,sep="\\"),header=T,stringsAsFactors=F)
 
