@@ -4,22 +4,24 @@ Below are the steps I've worked out so far for assembling the GPS collars. Unles
 ## Solder headers onto the Arduino
 We're using an Arduino Pro Mini 5v that needs a FTDI board to write the firmware to the Arduino. For that we need to attach headers to the Arduino.
 1. Discard (i.e., put in the parts bin) any male headers that may have come with the Arduino. We will use a 6-position 90-deg female header.
-<img src="./img/header1.jpg" width="50%" height="50%">
+<br><img src="./img/header1.jpg" width="50%" height="50%">
 2. Position the header on the end of the Arduino so that the header is on the top of the unit.
-<img src="./img/header2.jpg" width="50%" height="50%">
+<br><img src="./img/header2.jpg" width="50%" height="50%">
 3. Solder each header pin in place carefully.
 4. Gently bend the header to make sure it is parallel to the Arduino board. Then trim the excess pin material off the bottom of the board.
-<img src="./img/header3.jpg" width="50%" height="50%">
+<br><img src="./img/header3.jpg" width="50%" height="50%">
 
 ## Attach wiring to the Arduino
 The next step is to attach the wiring to the Arduino board that we will use for power, the SD card board, and the done pin back to the timer board. __NOTE: The unit will not work if the wires are soldered to the wrong pins! Pay attention and take your time soldering these on.__
 1. Cut a 2.5" to 3" section of the rainbow ribbon cable.
-<img src="./img/wiring1.jpg" width="50%" height="50%">
+<br><img src="./img/wiring1.jpg" width="50%" height="50%">
 2. Carefully slice with a sharp knife between the wires at one end of the ribbon to make it easier to separate the wires.
-3. Peel off the black/white and brown wires. Separate the remaining wires down about an inch.
+3. Peel off the black/white and brown wires. Separate the remaining wires down about an inch.<br>
 <img src="./img/wiring2.jpg" width="50%" height="50%">
 4. Strip 1/4" of insulation off of one end of each of the wires and twist the wire strands together. __NOTE: It can be helpful for feeding the wires through the holes on the Arduino if you tin the ends of the wire with solder to keep them from separating. This adds time, but saves sanity.__
-5. Insert the wires through from the bottom of the Arduino and solder them in place according to the following scheme:
+5. Insert the wires through from the bottom of the Arduino and solder them in place according to the table below.<br>
+<img src="./img/wiring3.jpg" width="50%" height="50%">
+6. Trim off the excess wire close to the board.
 
 |Color|Arduino Pin|
 | --- | --- |
@@ -33,24 +35,97 @@ The next step is to attach the wiring to the Arduino board that we will use for 
 | black | GND |
 | brown | 5 |
 
-<img src="./img/wiring3.jpg" width="50%" height="50%">
-6. Trim off the excess wire close to the board.
-
 ## Attach leads and capacitor to the USB power board
-This step preps the USB power board that will feed power to the timer board. This is a pretty simple step that involves attaching positive and ground leads and a 100 microF capacitor between the +5V and ground. The capacitor serves to stabilize the power from the USB. I'm not entirely sure how this works (Hey, I'm an ecologist, remember), but not having the capacitor can cause the timer board to not initialize properly and the power "dribbles" (for lack of a better term) onto the board, causing the Arduino LED to just flutter dimly and the whole thing becomes a paperweight.
-1. Cut approximately 4" pieces of red and black hookup wire and strip 1/4" insulation from one end of each. Twist and/or tin the ends of these wires.
+This step preps the 5V step-up power regulator that will feed power to the timer board. This is a pretty simple step that involves attaching positive and ground leads and a 100 microF capacitor between the Vout and ground. The capacitor serves to stabilize the power from the battery. I'm not entirely sure how this works (Hey, I'm an ecologist, remember), but not having the capacitor can cause the timer board to not initialize properly and the power "dribbles" (for lack of a better term) onto the board, causing the Arduino LED to just flutter dimly and the whole thing becomes a paperweight.
+1. Strip 1/4" from the ends of the wires of the female pigtail harness connector. Cut approximately 2" pieces of red and black hookup wire and strip 1/4" insulation from one end of each. Twist and/or tin the ends of these wires.<br>
 <img src="./img/power1.jpg" width="50%" height="50%">
-2. Starting with the negative lead, insert the black wire up through the bottom of the USB power board at the GND hole. Then insert the negative lead (short one, also the side of the cap with the gray stripe) of the capacitor in through the same hole. It's snug, but should fit fine. Leave about 1/8" of the capacitor's negative lead exposed on the bottom of the board so you can position the capacitor after soldering.
-3. Solder the black wire and capacitor's negative lead in place. Trim the excess.
-4. Working carefully, insert the red wire in the 5V hole. Feed the positive lead of the capacitor into the same hole and solder in place. Trim the excess. __NOTE: Work carefully with the capacitor to avoid overworking and stressing the leads, potentially breaking one of them off.__
+2. Insert the red wire from the pigtail harness from the top of the voltage regulator board into the VIN hole and solder it in place. Trim excess.
+3. Insert and solder the 2" black wire piece to GND.
+4. Insert and solder the 2" red wire piece to VOUT. This will be the 5V regulated power that goes to the timer board. _Note in the photo, the black wire from the pigtail is NOT attached to anything. It's just behind the red wire. Unfortunate photography._<br>
 <img src="./img/power2.jpg" width="50%" height="50%">
+5. _This is the only tricky step of this piece._ From the back of the board, lay the capacitor over the GND and VOUT pins and hold in place with a third-hand tool. __Make sure the polarity of the capacitor is correct. Long lead should be at VOUT and short lead should be on GND.__ Carefully heat the solder for VOUT (adding extra solder as necessary) to solder the capacitor to VOUT. Repeat for GND being careful to not accidentally merge VOUT and GND with excess solder. Trim the excess leads for the capacitor.<br>
+<img src="./img/power3.jpg" width="50%" height="50%">
 
 ## Prepare the timer board
+Preparing the timer board is straight forward, but requires care in a few steps. The duration of the interval on the timer board is set by resistance. The timer board has a potentiometer that can be used to set the interval, but it is imprecise. To set a specific interval, a fixed resistor is needed and the potentiometer must be disabled.
+
+1. Use a sharp knife to cut the thin traces on the back of the timer board for LED Enable and Trim Enable. It is helpful to use a magnifying glass or dissecting microscope to ensure that you have completely cut the trace.
+<br><img src="./img/timer1.jpg" width="50%" height="50%">
+2. Cut approximately 3" of red and black hookup wire and strip 1/4" from one end of each wire.
+<br><img src="./img/timer2.jpg" width="50%" height="50%">
+3. Bend a 43k-ohm resistor into a U shape.
+4. Insert the black wire through the back of the board into the GND hole. Also insert one lead of the resistor into the GND hole (_it will be a tight fit!_). Solder the GND connections on from the front of the board.
+5. Insert the other end of the resistor through the Delay hole and solder from the front of the board.
+6. Solder the red wire into the Drive hole.
+7. Trim and excess.
+<br><img src="./img/timer3.jpg" width="50%" height="50%">
 
 ## Hook up the SD card board
+This part is pretty easy, but time consuming and care must be taken to ensure wires are connected properly. Redoing wires that were soldered in the wrong place is a real pain.
+
+1. Start with an Arduino that has the ribbon cable soldered to it and unpackage a SD card board.
+<br><img src="./img/sdcard1.jpg" width="50%" height="50%">
+2. Carefully separate the ends of the ribbon cable down about 1.5" and strip about 1/8" from the ends of each wire. Twist or tin the ends of the wire.
+<br><img src="./img/sdcard2.jpg" width="50%" height="50%">
+3. Inserting the wires from the bottom of the board, solder the wires according to the table below. Trim and excess. Separate the red and gray wires from the rest of the ribbon. These will be unconnected on the end opposite the SD card board.
+<br><img src="./img/sdcard3.jpg" width="50%" height="50%">
+
+| Wire Color | SD Card Connection |
+| --- | --- |
+| VCC | Red |
+| CS | Orange |
+| OI | Blue |
+| SCK | Green |
+| DO | Purple |
+| CD | Yellow |
+| GND | Gray |
 
 ## Connect the GPS
+Hookup of the GPS will depend on which GPS being used. For the 3-wire Sparkfun GPS units, simply solder the white wire to Arduino pin 4.
+
+For the Ublox GPS units, pay attention to the wiring diagram. The molex cable that comes with the GPS unit has the colors reversed, so black and red are TX/RX, and yellow and green are GND and VIN. Solder the TX wire (black) to Arduino pin 3 and the RX wire (red) to Arduino pin 4.
+<br><img src="./img/gps_ublox1.jpg" width="50%" height="50%">
 
 ## Connect the positive and negative leads
+This step involved gathering up all the loose VCC and ground leads and soldering them together. A 100 micro-F capacitor can help stabilize power but may not be necessary (but doesn't hurt).
+
+1. Gather the loose ground leads. Strip 1/4" from the end of each. Carefully twist them together and solder. Wrap the negative end of the capacitor around this soldered bundle and apply more solder. Trim excess.
+2. Repeat for the VCC leads, soldering the positive lead for the capacitor to the bundle as well.
+<br><img src="./img/assembly5.jpg" width="50%" height="50%">
+
+When you have finished this step, insert a blank microSD card and hook a battery up to the device to ensure that it is working properly. Let it run for a few cycles and check that data are being recorded to the SD card. Once you're happy with how the device is working, then move on to packaging the device.
 
 ## Positioning and packaging the device
+No silver bullets here. Just need to get the pieces on a small length of wood (paint stir stick, ~3" long, split in half lengthwise works well) or plastic (or other non-conductive backing material) as neatly as possible. Current arrangement detailed below. Use a flexible hot glue to hold the parts in place.
+<br><img src="./img/assembly1.jpg" width="50%" height="50%">
+
+<br><img src="./img/assembly2.jpg" width="50%" height="50%">
+
+<br><img src="./img/assembly3.jpg" width="50%" height="50%">
+
+<br><img src="./img/assembly4.jpg" width="50%" height="50%">
+
+
+## Secure device with heat-shrink tubing
+Clear heat-shrink tubing can be used to shrink-wrap the device and protect the soldered connections.
+
+1. Cut a section of the clear heat-shring tubing that is as long as the device.
+2. Fit the tubing over the device being careful not to snag or displace and of the wires or components.
+3. Holding the device by the pigtail, use a heat gun on low setting to shrink the tubing around the device. Let it cool afterward.
+4. If the heat-shrink tubing is depressing the buttons on the arduino or the timer board, use a sharp knife to gently cut away the het-shrink plastic from immediately around the buttons.
+5. Ensure that the heat-shrink tubing does not interfere with the FTDI header on the Arduino or inserting/removing the microSD card.
+
+## Battery holder and leads
+We are using Imram 3000 mAh 3.7V LiPo rechargeable batteries. The batteries are housed in a plastic holder with a spring on the negative end. The leads that come on the battery holder are cheap, thin wires and need to be replaced with the male end of the pigtail wiring harness.
+1. Clip the original, thin leads off of the battery holder as close to the plastic as possible. Make sure that nothing will interfere with the positive terminal of the battery mating with the contact on the battery holder.
+2. Strip about 1/4" of wire from the red and black wires of the wiring harness.
+3. Starting with the positive terminal (no spring, red wire), carefully solder the red wire from the pigtail onto the brass "button" on the end of the battery holder. Use a generous amount of solder and ensure that the connection is solid. _Note: you will need to work quickly because the heat from the soldering iron will start to melt the battery holder if the contact gets too hot._
+4. Trim and excess wire protruding inside the positive contact in the battery holder.
+5. Repeat with the negative terminal (black wire). No need to worry about trimming excess wire as it will be out of the way inside the spring.
+<img src="./img/batteryholder.jpg" width="50%">
+
+## Load firmware and test device
+Firmware can be loaded at any stage. Use the FTDI cable to connect the Arduino Pro Mini to the computer. Make sure the voltage jumper on the FTDI board is set correctly for the voltage of the board. If the LED on the Arduino does not light up, the FTDI board is inserted backward. Verify the board settings on the computer are correct and upload the firmware to the device.
+<br><img src="./img/firmware1.jpg" width="50%" height="50%">
+
+## Prep the data card and label the GPS units.
