@@ -1,0 +1,88 @@
+---
+title: "Pre-processing of iGotU GPS Collar Data"
+output: html_notebook
+params:
+  path: "C:/Users/Jason Karl/Documents/GitHub/COTS_GPS_Collars/iGotU_Collar_Data"
+  file: "22.igotu.brownsbench.csv"
+  local.tz: "America/Denver"
+  filter.dates: FALSE
+  filter.location: FALSE
+  date.range: c("2018-05-01 00:00:00","2018-06-06 23:59:59")
+  location.range: c(xmin=-113.453,xmax=-113.433,ymin=42.163,ymax=42.191)
+  
+---
+
+This is R Notebook performs pre-processing of the raw GPS data from the iGotU GPS collars. Modify the path, data file, and options above and run this notebook to load and clean the GPS data, run some descriptive statistics, and output the results as a shapefile (points and lines). 
+
+```{r}
+library(rgdal)
+library(dplyr)
+library(geosphere)
+library(lubridate)
+library(ggplot2)
+library(ggmap)
+library(maptools)
+
+## Load the iGotU CSV file
+##### Note: iGotU uses a UTF-16 encoding. Failure to specify that encoding will result in errors and blank cells on import
+raw.data <- read.csv(file.path(params$path,params$file),header=T,stringsAsFactors=F,fileEncoding = "UTF-16LE") 
+
+#make sure lat/lon fields are numeric
+raw.data$Latitude <- as.numeric(raw.data$Latitude)
+raw.data$Longitude <- as.numeric(raw.data$Longitude)
+
+## Remove records with Lat/Lon equal to zero
+filtered.data <- raw.data %>% filter(Latitude != 0 & Longitude != 0)
+
+## Format Date/Time field
+filtered.data$MDTDateTime <- parse_date_time(paste(filtered.data$Date,filtered.data$Time,sep="-"),"%Y/%m%d-%H:%M:%S",tz=params$local.tz)
+
+```
+
+Pre-process the data by screening out the readings with lat/lon values of zero and dates outside the study range
+
+```{r}
+
+## Apply location and date filters
+if (params$filter.dates==TRUE){
+  date.range <- eval(parse(text=params$date.range))
+  filtered.data <- filtered.data %>% filter(MDTDateTime>=date.range[1] & MDTDateTime<=date.range[2])
+}
+if (params$filter.location==TRUE){
+  location.range <- eval(parse(text=params$location.range))
+  filtered.data <- filtered.data %>% filter(Longitude>=location.range['xmin'] & Longitude<=location.range['xmax'] & Latitude>=location.range['ymin'] & Latitude<=location.range['ymax'])
+}
+
+## Calculate time difference between subsequent readings
+filtered.data$tdiff <- as.numeric(filtered.data$MDTDateTime - lag(filtered.data$MDTDateTime,default=0))
+filtered.data$tdiff[1] <- 0 ## Correct the first record.
+
+## Calculate distance between subsequent readings
+filtered.data$dist <- mapply(function(Lat1,Lon1,Lat2,Lon2){
+                  distGeo(c(Lon1,Lat1),c(Lon2,Lat2))
+              },
+              Lat1=filtered.data$Latitude,Lon1=filtered.data$Longitude,Lat2=lag(filtered.data$Latitude),Lon2=lag(filtered.data$Longitude))
+filtered.data$dist[1] <- 0 # Correct the first record
+
+## Calculate velocity between subsequent readings
+filtered.data$velocity <- filtered.data$dist/filtered.data$tdiff
+
+```
+
+```{r}
+## export result as shapefiles for lines and points
+to.lines <- data.frame(Lat2=filtered.data$Latitude,Lon2=filtered.data$Longitude,Lat1=lag(filtered.data$Latitude,default=filtered.data$Latitude[1]),Lon1=lag(filtered.data$Longitude,default=filtered.data$Longitude[1]),id=filtered.data$Index-1)
+lines <- mapply(function(Lat1,Lon1,Lat2,Lon2,id){
+          Lines(Line(cbind(c(Lon1,Lon2),c(Lat1,Lat2))),ID=id)
+        },
+        to.lines$Lat1,to.lines$Lon1,to.lines$Lat2,to.lines$Lon2,to.lines$id)
+spatial.lines <- SpatialLinesDataFrame(SpatialLines(lines),data=to.lines,match.ID = FALSE)
+proj4string(spatial.lines)<-CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+writeOGR(spatial.lines,params$path,paste(substr(params$file,1,nchar(params$file)-4),"lines",sep="_"),driver="ESRI Shapefile",overwrite_layer = TRUE)
+
+coordinates(filtered.data)<-~Longitude+Latitude
+proj4string(filtered.data)<-CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+writeOGR(filtered.data,params$path,substr(params$file,1,nchar(params$file)-4),driver="ESRI Shapefile",overwrite_layer = TRUE)
+
+```
+

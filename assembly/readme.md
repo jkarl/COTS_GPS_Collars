@@ -96,7 +96,24 @@ This step involved gathering up all the loose VCC and ground leads and soldering
 When you have finished this step, insert a blank microSD card and hook a battery up to the device to ensure that it is working properly. Let it run for a few cycles and check that data are being recorded to the SD card. Once you're happy with how the device is working, then move on to packaging the device.
 
 ## Positioning and packaging the device
-No silver bullets here. Just need to get the pieces on a small length of wood (paint stir stick, ~3" long, split in half lengthwise works well) or plastic (or other non-conductive backing material) as neatly as possible. Current arrangement detailed below. Use a flexible hot glue to hold the parts in place.
+No silver bullets here. Just need to get the pieces on a small length of wood (paint stir stick, ~3" long, split in half lengthwise works well) or plastic (or other non-conductive backing material) as neatly as possible. Cable length is a perennial challenge. If cables are too short, positioning of components is difficult. If the are too long, the excess cables get in the way.
+
+Current arrangement detailed below. Use a flexible hot glue to hold the parts in place.
+
+1. Solder the white GPS wire (Sparkfun GPS) or the Tx and Rx wires (uBlox neo m8n) to the arduino board and then hot-glue the arduino and the SD card boards to a 1/2" x 3" segment of paint stir stick (sanded to remove sharp edges). Fold the wires from the SD card board under the arduino before gluing. Make sure the VCC and GND wires for the arduino, SD card board, and GPS do not get caught in the glue.
+
+2. Flip the paint stir stick over and hot glue the GPS to the same end as the arduino. Make sure the power leads for the GPS are out of the way and the white data wire lays neatly against the stick. __Also make sure the antenna is facing up (away from the stick)!__
+
+3. Solder the done wire from the arduino (brown) to the timer board, and then hot glue the timer board to the paint stir stick on the same end as the SD card.
+
+4. hot glue the voltage regulator down between the timer board and the GPS.
+
+5. Gather the VCC leads from the arduino, SD card board and GPS, and the DRIVE lead from the timer board (n=4). Strip each and solder these together along with the positive lead of a 100 microF capacitor. Trim excess.
+
+6. Gather the negative (GND, n=5) leads from the arduino, SD card board, the timer board, the GPS, and the negative battery lead. Strip each and solder them together along with the negative lead of the capacitor. Trim excess.
+
+7. Carefully position the leads bundle and capacitor on the paint stick between the timer board and GPS and hot glue in place. Generously coat the exposed wire/capacitor leads to prevent them from contacting each other or other components. Route the battery connector leads along the side of the paint stick.
+
 <br><img src="./img/assembly1.jpg" width="50%" height="50%">
 
 <br><img src="./img/assembly2.jpg" width="50%" height="50%">

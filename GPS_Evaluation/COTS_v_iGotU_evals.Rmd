@@ -1,0 +1,122 @@
+---
+title: "Data Analysis from GPS Collar Prototype"
+output: github_document
+---
+Analysis of properties of the GPS data from the prototype GPS collar
+12 March 2018
+
+With the prototype GPS and the firmware dated 3/11/2018, I conducted a series of tests to empirically measure 1) power consumption over a longer time period (24 hr) to get a handle on battery capacity, 2) time to first average fix and time to best fix, and 3) quality of the GPS readings in terms of average HDOP and spread around the average GPS reading from a stationary prototype.
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(rgdal)
+library(dplyr)
+library(geosphere)
+```
+
+
+```{r data, echo=FALSE}
+# Load Data from COTS prototype
+path <- "C:\\Users\\Jason Karl\\Documents\\GitHub\\COTS_GPS_Collars\\COTS_GPS_Collars\\GPS_Evaluation"
+rtk.loc <- c(-116.991833249,46.7172203903)
+
+
+file <-"point_averaging_5-sec-niterval_GPSLOG.CSV" # "1sec_test2_1hr_duration.csv" #
+colNames <- c("HDOP","Lat","Lon","NumSat","UTCDate","UTCTime","FirstFix","LastFix","BestFix")
+gps.data <- read.csv(paste(path,file,sep="\\"),header=T,col.names=colNames,stringsAsFactors=F)
+
+# Filter to remove blanks
+gps.data <- gps.data[gps.data$Lon<0,]
+gps.data <- gps.data[gps.data$NumSat>0,]
+
+## calculate mean lat/lon
+meanLat <- mean(gps.data$Lat)
+meanLon <- mean(gps.data$Lon)
+
+## Calc difference from mean
+gps.data$diffdist <- mapply(function(x,y){distGeo(c(meanLon,meanLat),c(x,y))},x=gps.data$Lon,y=gps.data$Lat)
+gps.data$diffLat <- mapply(function(x,y){distGeo(c(x,meanLat),c(x,y))},x=gps.data$Lon,y=gps.data$Lat)
+gps.data$diffLon <- mapply(function(x,y){distGeo(c(meanLon,y),c(x,y))},x=gps.data$Lon,y=gps.data$Lat)
+
+
+## Load the iGotU data
+iGotU.file <- "iGotU_unit5_test.csv"
+iGotU.data <- read.csv(paste(path,iGotU.file,sep="\\"),header=T,stringsAsFactors=F,fileEncoding = "UTF-16LE")
+
+## remove the blanks from the iGotU data and filter to one day
+iGotU.data <- iGotU.data %>% filter(Latitude > 0 & Date == ' 2018/03/25')
+
+## find mean of iGotU GPS locations
+iGotU.meanLat <- mean(iGotU.data$Lat)
+iGotU.meanLon <- mean(iGotU.data$Lon)
+
+## Calc difference from mean iGotU loc
+iGotU.data$diffdist <- mapply(function(x,y){distGeo(c(iGotU.meanLon,iGotU.meanLat),c(x,y))},
+                              x=iGotU.data$Lon,y=iGotU.data$Lat)
+iGotU.data$diffLat <- mapply(function(x,y){distGeo(c(x,iGotU.meanLat),c(x,y))},
+                              x=iGotU.data$Lon,y=iGotU.data$Lat)
+iGotU.data$diffLon <- mapply(function(x,y){distGeo(c(iGotU.meanLon,y),c(x,y))},
+                              x=iGotU.data$Lon,y=iGotU.data$Lat)
+
+```
+## Summary Statistics for GPS Test Data
+
+
+```{r summaries, echo=FALSE}
+## Calc diference from RTK location to mean of collar
+gps.accuracy <- distGeo(rtk.loc,c(meanLon,meanLat))
+iGotU.accuracy <- distGeo(rtk.loc,c(iGotU.meanLon,iGotU.meanLat))
+
+gps.95CEP <- quantile(gps.data$diffdist,0.95)
+iGotU.95CEP <- quantile(iGotU.data$diffdist,0.95)
+```
+
+
+
+```{r plots}
+
+g <- ggplot(data=gps.data, aes(x=diffLon,y=diffLat))+geom_point(color="grey")+
+  stat_ellipse(level=0.95)+ #geom_hline(yintercept = meanLat) + geom_vline(xintercept = meanLon)+ #geom_point(aes(x=rtk.loc[1],y=rtk.loc[2]))+
+  labs(title="COTS GPS positional error", x="Difference from Avg Longitude (m)", y="Difference from Avg Latitude (m)")
+g
+
+g.iGotU <- ggplot(data=iGotU.data, aes(x=diffLon,y=diffLat))+geom_point(color="grey")+
+  stat_ellipse(level=0.95)+geom_hline(yintercept = 0) + geom_vline(xintercept = 0)+
+  xlim(c(-50,75))+ylim(c(-50,50))+
+  labs(title="iGotU GPS positional error", x="Difference from Avg Longitude (m)", y="Difference from Avg Latitude (m)")
+g.iGotU
+```
+
+### Trend of positional accuracy by HDOP?
+Yeah, but pretty slight.
+```{r}
+ggplot(data=plot.df[plot.df$HDOP<500,], aes(x=HDOP, y=diffdist))+geom_point()+geom_smooth(method="lm")
+```
+
+
+### Is there a trend of positional error by time of day?
+Nope.
+
+```{r}
+ggplot(data=plot.df, aes(x=GPSTime, y=diffdist))+geom_point()
+```
+```{r, include=FALSE}
+print(mean(plot.df$FixTime))
+print(quantile(plot.df$FixTime, 0.9))
+
+print(mean(plot.df$BestTime))
+print(quantile(plot.df$BestTime, 0.9))
+
+print(mean(plot.df$diffdist))
+print(quantile(plot.df$diffdist, 0.9))
+```
+
+## Takehome messages
+For 10-minute fix intervals with the GPS unit inside the house (I'm kind of surprised it even got a fix):
+- Average time to first fix was 11 seconds with 90% of first fixes within 27.3 seconds.
+- Average time to best fix was 13 seconds with 90% of first fixes within 31.3 seconds.
+- Average positional error was 14.4m with 90% of GPS readings within 29.4m of the average of all GPS readings.
+
+
+
