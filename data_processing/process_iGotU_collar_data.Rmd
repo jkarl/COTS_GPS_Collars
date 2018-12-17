@@ -2,7 +2,7 @@
 title: "Pre-processing of iGotU GPS Collar Data"
 output: html_notebook
 params:
-  path: "C:/Users/Jason Karl/Documents/GitHub/COTS_GPS_Collars/iGotU_Collar_Data"
+  path: "C:\\Users\\Jason Karl\\Documents\\GitHub\\COTS_GPS_Collars\\COTS_GPS_Collars\\2018_collar_data\\iGotU_Collars"
   file: "22.igotu.brownsbench.csv"
   local.tz: "America/Denver"
   filter.dates: FALSE
