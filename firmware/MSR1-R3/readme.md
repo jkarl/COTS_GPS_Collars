@@ -1,7 +1,7 @@
 # Creating a better fence project
 ## GPS tracking collar revision
 
-This revision of the GPS tracking collar is intended to simplify and streamline creation of more collars.  The design focused on battery life, cost, and easy of assembly.  In the following you'll find the parts used for this project, and the steps taken to achieve a working unit.
+This revision of the GPS tracking collar is intended to simplify and streamline creation of more collars.  The design focused on battery life, cost, and ease of assembly.  In the following you'll find the parts used for this project, and the steps taken to achieve a working unit.
 
 There are now multiple version of this project.  While they all accomplish the
 same task in the same way, they look slightly different.  The first revision has
