@@ -126,6 +126,7 @@ void setup()
   //Serial.begin(4800);
   LoadSettings();
   R1Begin();
+  digitalWrite(LED1,LOW);
 }
 
 
