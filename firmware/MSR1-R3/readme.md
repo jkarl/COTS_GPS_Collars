@@ -29,34 +29,10 @@ smaller, and was designed to be sent to a manufacturer to be printed, as well as
  * Checking the Fuses
 
 ### Software settings
-The settings for these devices can be changed by a file called settings loaded onto the SD card.  A template for this file is included in the repo.  
 
-The settings file is a .csv file with a particular order.  The devices read in the numbers expecting that order, so they cannot be changed in their current state. The settings and there order are as follows:
-
-##### Time Zone
-Time zone adjusts off of UTC.  For example, setting for Moscow, ID would require Time Zone to be -8.
-
-##### Short Sleep
-Short sleep is the regular delay that happens in between readings in the day time.  This time is measured in minutes and only accepts positive integers.  
-
-When setting this delay keep in mind that the GPS is powered down for this interval.  Also remember that the unit itself goes back to sleep for 30 seconds before ever trying to read from the GPS.  For that reason if you set Short Sleep to 4 you'll actually have a delay of 4 minutes and 30 seconds before the unit attempts to log data again.  However, the last 30 seconds the GPS is powered on and "warming".
-##### Long Sleep
-Long sleep is the delay that happens each night.  It is measured in hours.
-##### Long Sleep On
-Long Sleep On is an hour in 24 hour format.  Any reading that happens in or after that hour tells the unit to shut down for a longer amount of time than normal.  The amount of time is controlled by the Long Sleep setting.
-##### Long Sleep Off
-Long Sleep Off ends the period of time that triggers the Long Sleep setting.  It would be a good idea to keep the difference between on and off to around 3 hours.  
-
-Note: This setting is not the time the unit will turn back on.  
-##### Desired HDOP
-The unit will wait to receive this HDOP value before accepting and writing a value.  This value needs to be adjusted for any factor that the GPS may have.
-##### GPS Baud
-This value is simply the baud rate of the attached GPS.  
-
-
-### Assembly
-Parts required for R1 and R2:
-* ATMEGA 328p (With or without bootloader)
+### Parts
+Required for R1 and R2:
+* ATMEGA 328p-U (With or without bootloader)
 * SD Card Module
 * SD Card
 * 10k Ohm Resistor
@@ -65,7 +41,6 @@ Parts required for R1 and R2:
 * Mosfet - IRLZ34N or equivalent
 * GPS Module
 * PCB
-* 2 LEDs - preferably 1 green and 1 red
 
 Required for R3
 * PCB
@@ -122,10 +97,9 @@ LED2 - Preferably Red LED </br>
 Q2 - Mosfet
 POWER2 - .1uF Capacitor</br>
 Q1 - Xtal (optional)
-
 Note the notch in the 16 pin chip holder matches the notch drawn on the board.
 
-
+The SD card, GPS module, and power have their traces labeled, simply match up the pins on the PCB to the pins on the breakout.
 The SD card was intended to fit on the underside of the board.  However, the pinout is backwards, so the SD will cover the mosfet instead.
 
 C2 and C3 are optional, and are used with external xtal oscillators if used.  If they are not in use, they can remain empty.
@@ -211,9 +185,9 @@ At this point you'll need to open up either the command line, or powershell.  Th
 In the command line, type "avrdude -c arduino -p m328p -P COM3 -b 19200 -v".  Replacing COM3
 with the COM port used by your system.  The Arduino IDE has this information in the menu Tools -> port if you're unsure.
 This information can also be found in the windows device manager, under the ports section.
-You'll want to write these down just in case you need to undo what you've done.  Typically you'll only need to test one or two chips per batch, they tend to have the same values.
+You'll want to write these down just in case you need to undo what you've done.
 
-2. Determine New Fuse values
+2. Determine Fuse values
 
 If you are leaving the defaults as I have found them, your fuse values are as such:
 
@@ -292,9 +266,8 @@ doesn't affect much, and can be wrong if it isn't changing.
 
 If you find the fuse values are correct, and you have already verified the chip itself is what's wrong and not the board, then chances are the chip
 itself is a different version.  This write up uses the 328p-u.  I have seen oddities like this on the 328-pu, and I am not sure theres anything to be done about it.
-###### Incorrect Signature
+###### Using 328 instead of 328p
 
-This error tends to appear when using a non-P version of the 328.
 If using the 328 instead of the 328p you'll need to open up the arduino IDE settings file.  Go to the install location for you arduino IDE, typically in C:/Program Files(x86)/Arduino/
 
 Then go into hardware, and open the boards file. In this file there is a hardware signature that needs to be changed.  You can find what you need to change it to by opening the arduino IDE and attempting to burn the bootloader.  It should tell you there's an incorrect signature, and what it is.  
@@ -302,7 +275,7 @@ Then go into hardware, and open the boards file. In this file there is a hardwar
 After you change this you can program  the non-P versions.  This extra step of difficulty, along with the lesser efficiency is why these chips arin't recommended.
 
 
-###### Out of sync / Invalid Signature
+###### Out of sync
   If you get this error, chances are you just set up the breadboard circuit to be used.  If that's the case, double check
   the wiring, and make sure all the parts are there. Specifically the crystal and caps.
 
