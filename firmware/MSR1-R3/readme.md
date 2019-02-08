@@ -3,15 +3,12 @@
 
 This revision of the GPS tracking collar is intended to simplify and streamline creation of more collars.  The design focused on battery life, cost, and ease of assembly.  In the following you'll find the parts used for this project, the steps taken to achieve a working unit, and the settings file.
 
-There are now multiple version of this project.  While they all accomplish the
-same task in the same way, they look slightly different.  The first revision has
-MS_R1 written on it.  This was the first PCB print, and worked just fine.  The reason
-R2 was made was to shrink down this board so that it would fit better in the collars.
-R3 was made almost entirely out of surface mounted parts.  This unit is significantly
-smaller, and was designed to be sent to a manufacturer to be printed, as well as assembled.
+There are now multiple version of this project.  While they all accomplish the same task in the same way, they look slightly different. The first revision has MS_R1 written on it.  This was the first PCB print, and worked just fine.  The reason R2 was made was to shrink down this board so that it would fit better in the collars. R3 was made almost entirely out of surface mounted parts.  This unit is significantly smaller, and was designed to be sent to a manufacturer to be printed, as well as assembled.
 
+It is not recommended to use the first revision, or any revision that is not voltage regulated.  Fortunately, only about 25 or so were ever made without this feature.  For that reason the assembly guide will assume that you have a voltage regulated board.
 
 ### Contents
+- Unit Specifications
 - Software Settings
 - Parts Required
 - Software Required
@@ -28,24 +25,51 @@ smaller, and was designed to be sent to a manufacturer to be printed, as well as
  * Common Issues I ran into
  * Checking the Fuses
 
+
+### Unit Specifications
+
+  Any board that is a whole number, like MS_R1 or MS_R2, does not have the voltage regulating feature.  Not many of these were made, but it would be wise to check.  Any board with a half on the end, like MS_R2.5, will have the voltage regulating chip on it.
+
+  If you have a regulated board, voltages may go up to, but not exceed, 12 volts.  The input must also cut off below 2.7 volts.  The board itself does not provide over discharge protection, the supply is expected to do so.
+
+  If you do not cut off below 2.7 volts, the mega328 is programmed to cease functioning, but the GPS and SD card are not.  This functionality could cause unknown behavior. It could also drain the source more than intended, potentially damaging it.
+
+  If you have a board that is not regulated, you cannot exceed 3.7 volts.  Many boards worked at 4.1 volts, but it is inconsistent.  Unregulated boards should work under 3.7 volts.
+
+  All boards should be programmed with a 3.3 volt FTDI programmer.  High voltages than this could cause damage to the SD card unit.
+
+|Version  | Min Voltage | Max Voltage | Programming Voltage |
+|-----    |-----        |-----        |-----                |
+|MS_R1    |2.7 V        | 3.7 V       | 3.3 V               |
+|MS_R2    |2.7 V        | 3.7 V       | 3.3 V               |
+|MS_R2.5  |2.7 V        | 12  V       | 3.3 V               |
+|MS_R3    |2.7 V        | 3.7 V       | 3.3 V               |
+|MS_R3.5  |2.7 V        | 12 V        | 3.3 V               |
+|MS_R4.5  |2.7 V        | 12 V        | 3.3 V               |
+
 ### Software settings
 
 ### Parts
-Required for R1 and R2:
-* ATMEGA 328p-U (With or without bootloader)
+Required for R2.5 and R3.5
+* ATMEGA 328p-PU (With or without bootloader)
 * SD Card Module
 * SD Card
 * 10k Ohm Resistor
 * 2 ~ 200 Ohm Resistors
 * 2 ~ .1uF Capacitors
+* 2 ~ 1uF Capacitors
+* 1 Preferably Green LED
+* 1 Preferably Red LED
+* MCP1702T-3302E/CB LDO voltage regulator
 * Mosfet - IRLZ34N or equivalent
 * GPS Module
 * PCB
 
-Required for R3
+Required for R3.5
 * PCB
 * External crystal
 * Breadboard/Jumper wires
+
 
 Required to program the collar:
 * FTDI Programmer
@@ -85,7 +109,7 @@ AVR Dude is not installed.
 When using AVR Dude everything will be through the command prompt, or the powershell.
 All the necessary commands are included in this write up.
 ### PCB Assembly
-#### MS-R1
+#### MS-R2.5
 
 C1 - .1uF Capacitor</br>
 C2 - 22pf Capacitor (optional)</br>
@@ -109,7 +133,7 @@ Again, the xtal is optional and not used in the initial design of the board.
 
 If using a breadboard be sure that you have oscillators and caps to aid in trouble shooting.
 
-#### MS-R2
+#### MS-R3.5
 C1 - .1uF Capacitor</br>
 C2 - 22pf Capacitor (optional)</br>
 C3 - 22pf Capacitor(optional)</br>
@@ -120,15 +144,6 @@ LED2 - Preferably Red LED </br>
 Q2 - Mosfet
 C4 - .1uF Capacitor</br>
 Q1 - Xtal (optional)
-
-The names on some of the earlier boards were removed.  The part outlines are still there, so it isn't too hard to figure out.  The smaller cap outlines are the optional C2 and C3.  The XTAL outline is next to them, also optional.
-
-On the otherside of those is the more important C1 and C4, and next to that is the 10k resistor.  The mosfet ends up being at the top, with the smaller resistors and LEDs.  The only other thing that could get confused is the FTDI program header is on the side of the board, while the SD header is in the middle.  This time the SD card covers the bottom of the 328p, like planned.
-
-#### MS-R3
-This board was meant to be sent out to be made.  All the parts should be already on the board as it comes back.  The key difference between this board and others is that the optional xtal parts have been removed.  Instead, there is a pin that is attatched to the external crystal pin of the chip.
-
-With that external pin you can put a clock source in to change the fuse settings, and then remove it.  This design changes things up a bit from the previous design, but does so to save a large amount of space.
 
 ### ATMega
 
