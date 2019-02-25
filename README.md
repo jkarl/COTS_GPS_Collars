@@ -1,10 +1,28 @@
-# COTS_GPS_Collars
+# Low-cost, Open Source GPS Tracking Collars for Studying Livestock Distribution
 Question: Is it possible to make a GPS collar for tracking livestock that will last up to 3 months on a single battery and cost less than $75 per collar using commercial off-the-shelf (COTS) parts?
 
-## Working prototype
-This ugly thing is the working prototype on a breadboard. It will, of course be packaged much neater and smaller for deployment, but hey, it works!
+## Evolution of the concept
+This project started in winter 2017 with a question of whether a simple, functional GPS tracking collar could be built from readily-available, open-source components and cost less than $50 per device. This concept has undergone multiple revisions and refinements singe then.
 
-<img src="./prototype.jpg" width="50%" height="50%">
+#### Working prototype
+This ugly thing was the first working prototype on a breadboard, but hey, it worked!. It demonstrated the potential of the concept and was the building block for subsequent development of the Commercial Off-the-Shelf (COTS) collar.
+
+<img src="./img/prototype.jpg" width="50%" height="50%">
+
+#### Commercial Off-the-Shelf (COTS) Collars
+The initial version that was developed and tested in 2018 consisted of readily available commercial components built around the popular Arduino microcontroller platform. These components were soldered together and powered from a 3.7V lithium-ion battery. Twenty-five of these units were produced and tested in a field trial in southern Idaho. While functional, and easy to produce, the units were sensitive to failure of the soldering joints.
+
+<img src="./img/COTS_Collar_Figure.jpg" width="550">
+
+
+#### Version 2 Collar
+For the 2018 revision of the GPS device, we opted for a custom circuit board to minimize unnecessary parts in an effort to reduce: 1) cost, 2) power consumption, and 3) points of failure due to soldering together independent components.
+
+#### Version 3 Collar
+The version 3 collar is functionally the same as the version 2 collar except that it was developed using surface-mount components. The surface-mount devices are assembled by the manufacturer of the circuit board, and just need the firmware uploaded, and the GPS and battery attached to be operational. The entire version 3 board measures less than 1-inch square!
+
+<img src="./img/version3_PCB.PNG" width="100px">
+
 
 ### Electronics Parts List
 1. Arduino Pro Mini

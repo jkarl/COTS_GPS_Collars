@@ -2,12 +2,12 @@
 title: "Pre-processing of iGotU GPS Collar Data"
 output: html_notebook
 params:
-  path: "C:/Users/Jason Karl/Documents/GitHub/COTS_GPS_Collars/iGotU_Collar_Data"
-  file: "22.igotu.brownsbench.csv"
+  path: "C:\\Users\\jakal\\OneDrive - University of Idaho\\Documents\\GitHub\\COTS_GPS_Collars\\COTS_GPS_Collars\\2018_collar_data\\iGotU_Collars"
+  file: "1.igotu.brownsbench.csv"
   local.tz: "America/Denver"
   filter.dates: FALSE
   filter.location: FALSE
-  date.range: c("2018-05-01 00:00:00","2018-06-06 23:59:59")
+  date.range: c("2018-04-27 00:00:00","2018-06-06 23:59:59")
   location.range: c(xmin=-113.453,xmax=-113.433,ymin=42.163,ymax=42.191)
   
 ---

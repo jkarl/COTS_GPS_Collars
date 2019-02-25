@@ -18,11 +18,13 @@ library(geosphere)
 
 ```{r data, echo=FALSE}
 # Load Data from COTS prototype
-path <- "C:\\Users\\Jason Karl\\Documents\\GitHub\\COTS_GPS_Collars\\COTS_GPS_Collars\\GPS_Evaluation"
+path <- "C:\\Users\\jakal\\OneDrive - University of Idaho\\Documents\\GitHub\\COTS_GPS_Collars\\COTS_GPS_Collars\\GPS_Evaluation"
 rtk.loc <- c(-116.991833249,46.7172203903)
 
 
-file <-"point_averaging_5-sec-niterval_GPSLOG.CSV" # "1sec_test2_1hr_duration.csv" #
+#file <- "1sec_test2_1hr_duration.csv" 
+file <- "point_averaging_5-sec-niterval_GPSLOG.CSV"  # point averaging
+#file <- "GPSLOG_011_location_test.csv" 
 colNames <- c("HDOP","Lat","Lon","NumSat","UTCDate","UTCTime","FirstFix","LastFix","BestFix")
 gps.data <- read.csv(paste(path,file,sep="\\"),header=T,col.names=colNames,stringsAsFactors=F)
 

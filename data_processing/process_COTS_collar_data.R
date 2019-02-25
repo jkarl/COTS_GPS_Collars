@@ -13,14 +13,17 @@ library(geosphere)
 library(maptools)
 
 ## Set env parameters
-path <- "C:/Users/Jason Karl/Documents/GitHub/COTS_GPS_Collars/collar_data"
-f <- "024.GPSLOG.CSV"
+path <- "C:\\Users\\jakal\\OneDrive - University of Idaho\\Documents\\GitHub\\COTS_GPS_Collars\\COTS_GPS_Collars\\2018_collar_data\\COTS_Collars"
+f <- "001.GPSLOG.CSV"
 local.tz <- "America/Denver"
 filter.dates <- TRUE
-filter.location <- TRUE
-date.range <- c("2018-05-01 00:00:00","2018-06-06 23:59:59")
+filter.location <- FALSE
+date.range <- c("2018-04-27 00:00:00","2018-05-01 23:59:59")
 location.range <- c(xmin=-113.453,xmax=-113.433,ymin=42.163,ymax=42.191)
-
+export.points <- FALSE
+export.lines <- FALSE
+export.dir <- "holding_pasture"
+make.map <- FALSE
 
 ########################################################
 ## Functions
@@ -114,21 +117,27 @@ filtered.data$id <- as.integer(rownames(filtered.data))
 
 
 ## export result as shapefiles for lines and points
-to.lines <- data.frame(Lat2=filtered.data$Lat,Lon2=filtered.data$Lon,Lat1=lag(filtered.data$Lat,default=filtered.data$Lat[1]),Lon1=lag(filtered.data$Lon,default=filtered.data$Lon[1]),id=filtered.data$id-1)
-lines <- mapply(function(Lat1,Lon1,Lat2,Lon2,id){
-          Lines(Line(cbind(c(Lon1,Lon2),c(Lat1,Lat2))),ID=id)
-        },
-        to.lines$Lat1,to.lines$Lon1,to.lines$Lat2,to.lines$Lon2,to.lines$id)
-spatial.lines <- SpatialLinesDataFrame(SpatialLines(lines),data=to.lines,match.ID = FALSE)
-proj4string(spatial.lines)<-CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-writeOGR(spatial.lines,path,paste(substr(f,1,nchar(f)-4),"lines",sep="_"),driver="ESRI Shapefile",overwrite_layer = TRUE)
+if (export.lines) {
+  to.lines <- data.frame(Lat2=filtered.data$Lat,Lon2=filtered.data$Lon,Lat1=lag(filtered.data$Lat,default=filtered.data$Lat[1]),Lon1=lag(filtered.data$Lon,default=filtered.data$Lon[1]),id=filtered.data$id-1)
+  lines <- mapply(function(Lat1,Lon1,Lat2,Lon2,id){
+    Lines(Line(cbind(c(Lon1,Lon2),c(Lat1,Lat2))),ID=id)
+  },
+  to.lines$Lat1,to.lines$Lon1,to.lines$Lat2,to.lines$Lon2,to.lines$id)
+  spatial.lines <- SpatialLinesDataFrame(SpatialLines(lines),data=to.lines,match.ID = FALSE)
+  proj4string(spatial.lines)<-CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+  writeOGR(spatial.lines,file.path(path,export.dir),paste(substr(f,1,nchar(f)-4),"lines",sep="_"),driver="ESRI Shapefile",overwrite_layer = TRUE)
+}
 
-coordinates(filtered.data)<-~Lon+Lat
-proj4string(filtered.data)<-CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-writeOGR(filtered.data,path,substr(f,1,nchar(f)-4),driver="ESRI Shapefile",overwrite_layer = TRUE)
+if (export.points) {
+  coordinates(filtered.data)<-~Lon+Lat
+  proj4string(filtered.data)<-CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+  writeOGR(filtered.data,file.path(path,export.dir),substr(f,1,nchar(f)-4),driver="ESRI Shapefile",overwrite_layer = TRUE)
+}
 
 ## display the results
-bbox <- c(left=filtered.data@bbox[1,1],bottom=filtered.data@bbox[2,1],right=filtered.data@bbox[1,2],top=filtered.data@bbox[2,2])
-m <- get_map(location=bbox,maptype="hybrid",zoom=14)
-ggmap(m)+geom_point(data=data.frame(filtered.data), aes(x=Lon,y=Lat,color=MDTDateTime))
+if (make.map) {
+  bbox <- c(left=filtered.data@bbox[1,1],bottom=filtered.data@bbox[2,1],right=filtered.data@bbox[1,2],top=filtered.data@bbox[2,2])
+  m <- get_map(location=bbox,maptype="hybrid",zoom=14)
+  ggmap(m)+geom_point(data=data.frame(filtered.data), aes(x=Lon,y=Lat,color=MDTDateTime))
+}
                     
