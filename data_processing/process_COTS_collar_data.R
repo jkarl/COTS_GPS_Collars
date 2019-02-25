@@ -140,4 +140,3 @@ if (make.map) {
   m <- get_map(location=bbox,maptype="hybrid",zoom=14)
   ggmap(m)+geom_point(data=data.frame(filtered.data), aes(x=Lon,y=Lat,color=MDTDateTime))
 }
-                    

@@ -9,10 +9,10 @@ params:
   filter.location: FALSE
   date.range: c("2018-04-27 00:00:00","2018-06-06 23:59:59")
   location.range: c(xmin=-113.453,xmax=-113.433,ymin=42.163,ymax=42.191)
-  
+
 ---
 
-This is R Notebook performs pre-processing of the raw GPS data from the iGotU GPS collars. Modify the path, data file, and options above and run this notebook to load and clean the GPS data, run some descriptive statistics, and output the results as a shapefile (points and lines). 
+This is R Notebook performs pre-processing of the raw GPS data from the iGotU GPS collars. Modify the path, data file, and options above and run this notebook to load and clean the GPS data, run some descriptive statistics, and output the results as a shapefile (points and lines).
 
 ```{r}
 library(rgdal)
@@ -25,7 +25,7 @@ library(maptools)
 
 ## Load the iGotU CSV file
 ##### Note: iGotU uses a UTF-16 encoding. Failure to specify that encoding will result in errors and blank cells on import
-raw.data <- read.csv(file.path(params$path,params$file),header=T,stringsAsFactors=F,fileEncoding = "UTF-16LE") 
+raw.data <- read.csv(file.path(params$path,params$file),header=T,stringsAsFactors=F,fileEncoding = "UTF-16LE")
 
 #make sure lat/lon fields are numeric
 raw.data$Latitude <- as.numeric(raw.data$Latitude)
@@ -85,4 +85,3 @@ proj4string(filtered.data)<-CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_def
 writeOGR(filtered.data,params$path,substr(params$file,1,nchar(params$file)-4),driver="ESRI Shapefile",overwrite_layer = TRUE)
 
 ```
-
