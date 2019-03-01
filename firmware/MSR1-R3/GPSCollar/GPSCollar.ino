@@ -123,9 +123,12 @@ void enterSleep(void)
  ***************************************************/
 void setup()
 {
-  //Serial.begin(4800);
-  LoadSettings();
+  Serial.begin(4800);
+  Serial.println("Starting");
   R1Begin();
+  LoadSettings();
+  delay(500);
+  digitalWrite(LED1,LOW);
 }
 
 
@@ -160,7 +163,7 @@ void loop()
           {
             if(gps.time.isValid()&&gps.time.isUpdated())//the && time prevents double writtings
             {
-                int hours=gps.time.hour()-TIMEZONEADJ; //convert time zones
+                int hours=gps.time.hour()+TIMEZONEADJ; //convert time zones
                 if(hours<0)
                   hours+=24;//shift to garuntee the number is positive (not -3 am)
                 hours=hours%24; //wrap around the back end 
@@ -253,6 +256,11 @@ void loop()
                 ss.end();//Required. WTD will not work properly otherwise.
                 digitalWrite(GPSPOWER,LOW);
                 delay(50);
+                digitalWrite(LED1,LOW);
+                delay(100);
+                digitalWrite(LED1,HIGH);
+                delay(100);
+                digitalWrite(LED1,LOW);
                 for(int sec=0, minutes=0;minutes<SHORTSLEEP;sec+=8)
                 {
                   enterSleep();
@@ -263,7 +271,7 @@ void loop()
                     sec=0;
                   }
                 }
-
+                digitalWrite(LED1,HIGH);
                 digitalWrite(GPSPOWER,HIGH);
                 for(int sec=0;sec<30;sec+=8) //Warm the GPS without spending processing power
                 {
@@ -278,7 +286,6 @@ void loop()
       }
     }  
   }
-
   }
 }
 
@@ -323,7 +330,7 @@ void R1Begin()
   
   //Serial.println("Initialisation complete.");
   delay(100); //Allow for serial print to complete.
-  digitalWrite(LED1,LOW);
+  //digitalWrite(LED1,LOW);
 }
 
 
@@ -344,8 +351,8 @@ void LoadSettings()
 {
   if (!SD.begin(SDCHIPSELECT)) // see if the card is present and can be initialized, also sets the object to hold onto that chip select pin
   {  
-    //Serial.println("SD fail"); //Tell PC, can be commented out
-    //Serial.println("Halting...");
+    Serial.println("SD fail"); //Tell PC, can be commented out
+    Serial.println("Halting...");
     digitalWrite(LED1,LOW); // turn off green LED
     digitalWrite(LED2,HIGH); //turn on RED LED
     SD.end();

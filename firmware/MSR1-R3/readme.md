@@ -1,17 +1,14 @@
 # Creating a better fence project
 ## GPS tracking collar revision
 
-This revision of the GPS tracking collar is intended to simplify and streamline creation of more collars.  The design focused on battery life, cost, and easy of assembly.  In the following you'll find the parts used for this project, and the steps taken to achieve a working unit.
+This revision of the GPS tracking collar is intended to simplify and streamline creation of more collars.  The design focused on battery life, cost, and ease of assembly.  In the following you'll find the parts used for this project, the steps taken to achieve a working unit, and the settings file.
 
-There are now multiple version of this project.  While they all accomplish the
-same task in the same way, they look slightly different.  The first revision has
-MS_R1 written on it.  This was the first PCB print, and worked just fine.  The reason
-R2 was made was to shrink down this board so that it would fit better in the collars.
-R3 was made almost entirely out of surface mounted parts.  This unit is significantly
-smaller, and was designed to be sent to a manufacturer to be printed, as well as assembled.
+There are now multiple version of this project.  While they all accomplish the same task in the same way, they look slightly different. The first revision has MS_R1 written on it.  This was the first PCB print, and worked just fine.  The reason R2 was made was to shrink down this board so that it would fit better in the collars. R3 was made almost entirely out of surface mounted parts.  This unit is significantly smaller, and was designed to be sent to a manufacturer to be printed, as well as assembled.
 
+It is not recommended to use the first revision, or any revision that is not voltage regulated.  Fortunately, only about 25 or so were ever made without this feature.  For that reason the assembly guide will assume that you have a voltage regulated board.
 
 ### Contents
+- Unit Specifications
 - Software Settings
 - Parts Required
 - Software Required
@@ -28,24 +25,51 @@ smaller, and was designed to be sent to a manufacturer to be printed, as well as
  * Common Issues I ran into
  * Checking the Fuses
 
+
+### Unit Specifications
+
+  Any board that is a whole number, like MS_R1 or MS_R2, does not have the voltage regulating feature.  Not many of these were made, but it would be wise to check.  Any board with a half on the end, like MS_R2.5, will have the voltage regulating chip on it.
+
+  If you have a regulated board, voltages may go up to, but not exceed, 12 volts.  The input must also cut off below 2.7 volts.  The board itself does not provide over discharge protection, the supply is expected to do so.
+
+  If you do not cut off below 2.7 volts, the mega328 is programmed to cease functioning, but the GPS and SD card are not.  This functionality could cause unknown behavior. It could also drain the source more than intended, potentially damaging it.
+
+  If you have a board that is not regulated, you cannot exceed 3.7 volts.  Many boards worked at 4.1 volts, but it is inconsistent.  Unregulated boards should work under 3.7 volts.
+
+  All boards should be programmed with a 3.3 volt FTDI programmer.  High voltages than this could cause damage to the SD card unit.
+
+|Version  | Min Voltage | Max Voltage | Programming Voltage |
+|-----    |-----        |-----        |-----                |
+|MS_R1    |2.7 V        | 3.7 V       | 3.3 V               |
+|MS_R2    |2.7 V        | 3.7 V       | 3.3 V               |
+|MS_R2.5  |2.7 V        | 12  V       | 3.3 V               |
+|MS_R3    |2.7 V        | 3.7 V       | 3.3 V               |
+|MS_R3.5  |2.7 V        | 12 V        | 3.3 V               |
+|MS_R4.5  |2.7 V        | 12 V        | 3.3 V               |
+
 ### Software settings
 
 ### Parts
-Required for R1 and R2:
-* ATMEGA 328p-U (With or without bootloader)
+Required for R2.5 and R3.5
+* ATMEGA 328p-PU (With or without bootloader)
 * SD Card Module
 * SD Card
 * 10k Ohm Resistor
 * 2 ~ 200 Ohm Resistors
 * 2 ~ .1uF Capacitors
-* Mosfet
+* 2 ~ 1uF Capacitors
+* 1 Preferably Green LED
+* 1 Preferably Red LED
+* MCP1702T-3302E/CB LDO voltage regulator
+* Mosfet - IRLZ34N or equivalent
 * GPS Module
 * PCB
 
-Required for R3
+Required for R3.5
 * PCB
 * External crystal
 * Breadboard/Jumper wires
+
 
 Required to program the collar:
 * FTDI Programmer
@@ -85,16 +109,22 @@ AVR Dude is not installed.
 When using AVR Dude everything will be through the command prompt, or the powershell.
 All the necessary commands are included in this write up.
 ### PCB Assembly
-#### MS-R1
+#### MS-R2.5
 
 C1 - .1uF Capacitor</br>
-C2 - 22pf Capacitor</br>
-C3 - 22pf Capacitor</br>
+C2 - 22pf Capacitor (optional)</br>
+C3 - 22pf Capacitor(optional)</br>
 R1 - 10K Ohm Resistor</br>
+R2,R3 - 200 Ohm Resistor </br>
+LED1 - Preferably Green LED</br>
+LED2 - Preferably Red LED </br>
+Q2 - Mosfet
+POWER2 - .1uF Capacitor</br>
+Q1 - Xtal (optional)
 Note the notch in the 16 pin chip holder matches the notch drawn on the board.
 
 The SD card, GPS module, and power have their traces labeled, simply match up the pins on the PCB to the pins on the breakout.
-The SD card was intended to fit on the underside of the board.  However, the pinout is backwards, so the SD will hang over the edge of the board.
+The SD card was intended to fit on the underside of the board.  However, the pinout is backwards, so the SD will cover the mosfet instead.
 
 C2 and C3 are optional, and are used with external xtal oscillators if used.  If they are not in use, they can remain empty.
 If you decide to use an xtal use only one xtal and solder one leg to each hole, then place the 22pF ceramic caps in C2 and C3. The PCB is not designed to seat 4 pin crystal oscillators.
@@ -102,6 +132,19 @@ If you decide to use an xtal use only one xtal and solder one leg to each hole, 
 Again, the xtal is optional and not used in the initial design of the board.
 
 If using a breadboard be sure that you have oscillators and caps to aid in trouble shooting.
+
+#### MS-R3.5
+C1 - .1uF Capacitor</br>
+C2 - 22pf Capacitor (optional)</br>
+C3 - 22pf Capacitor(optional)</br>
+R1 - 10K Ohm Resistor</br>
+R2,R3 - 200 Ohm Resistor </br>
+LED1 - Preferably Green LED</br>
+LED2 - Preferably Red LED </br>
+Q2 - Mosfet
+C4 - .1uF Capacitor</br>
+Q1 - Xtal (optional)
+
 ### ATMega
 
 During the initial set up we will be using two different forms of communication to get information onto the ATMEGA 328p-pu.  One of those communications will be SPI from the arduino to the chip itself, the other use of an FTDI chip. There will also be use of AVR Dude on the command line.  Only basic commands are given via the command line.
@@ -130,11 +173,18 @@ Note: This sketch doesn't need to be reuploaded every time
 #### Burning bootloader
 If you have the shield on the arduino and the chip properly set in it, you'll be picking back up here.
 
+At this point you should take a look at the chip itself.  You'll see the model number printed directly on the top.  Every chip should have the number 328 written on it.  What comes after that is what you're interested in.  If your chip does NOT have the p directly after the 328 (no space) then you'll need to dig into the settings files on your computer. The non-P 328 isn't recommended, but still functions.  If you have one, please jump to the trouble shooting section on how to change your settings, then continue here.
+
+If your chip has that P, it'll look like this: 328P-X, where X is some other information.  Note this is different than 328-P.  This difference can cause a headache later, so it's best to check now.
+
+With that sorted out, continue with these steps.
+
 1. Connect the arduino to your computer.
 2. In the arduino IDE go to tools -> Board and select "Arduino Pro or Pro Mini" which comes with the IDE by default.
 3. In the arduino IDE go to tools -> Processor and select "ATMega328p (3.3v,8MHz)", which also is included by default.
 4. In the arduino IDE go to tools -> Programmer and select "Arduino as ISP"
-5. In the arduino IDE go to tools -> Burn Bootloader.
+5. In the arduino IDE go to tools -> Port, and make sure the correct port is selected.
+6. In the arduino IDE go to tools -> Burn Bootloader.
 
 After giving this some time, the IDE should tell you it is finished.
 If not, please check the trouble shooting section at the end.
@@ -143,8 +193,7 @@ You can now use the FTDI programmer to send code to the chip, but we arint arint
 ready yet. Before uploading code we need to check the fuses of the chip.
 
 #### Working with the fuses
-At this point you'll need to open up either the command line, or powershell. I used the command line myself.  To open it, hit the windows key,
-type in "cmd" and then run the command prompt.  This section is done entirely in the command line.
+At this point you'll need to open up either the command line, or powershell.  This section is done entirely in the command line.
 
 1. Note the current fuse values.
 
@@ -157,11 +206,17 @@ You'll want to write these down just in case you need to undo what you've done.
 
 If you are leaving the defaults as I have found them, your fuse values are as such:
 
-lfuse:
+lfuse: 0xD9
 
-hfuse:
+hfuse: --
 
-efuse:
+efuse: 0x05, or 0x07
+
+The high fuse value ends up not mattering.  When burning the bootloader the arduino IDE sets all of these fuses for you.  the hfuse is typically just fine and doesn't control anything we care about in this project.  
+
+There's a high chance that the efuse will also end up being just fine.  If the efuse is either of those values, just leave it alone.  
+
+The lfuse will absolutely need to be changed, however.  
 
 Otherwise, http://www.engbedded.com/fusecalc/ is a helpful tool in choosing fuse values.  Please be careful in choosing fuses,
 as it is possible to force a chip to no longer be programmable, so the code can never be changed.
@@ -179,9 +234,9 @@ decided to use for your device, in hex (The website above gives a hex value).
 
 To change the low fuse: </br>
 "avrdude -c arduino -p m328p -P COM3 -b 19200 -U lfuse:w:FUSEVALUE:m"</br>
-To change the high fuse:</br>
+To change the high fuse: (if needed)</br>
 "avrdude -c arduino -p m328p -P COM3 -b 19200 -U hfuse:w:FUSEVALUE:m"</br>
-To change the extended fuse:</br>
+To change the extended fuse: (if needed)</br>
 "avrdude -c arduino -p m328p -P COM3 -b 19200 -U efuse:w:FUSEVALUE:m"</br>
 
 Be sure to use "avrdude -c arduino -p m328p -P COM3 -b 19200 -v" again to check the values you have written.
@@ -226,10 +281,14 @@ doesn't affect much, and can be wrong if it isn't changing.
 
 If you find the fuse values are correct, and you have already verified the chip itself is what's wrong and not the board, then chances are the chip
 itself is a different version.  This write up uses the 328p-u.  I have seen oddities like this on the 328-pu, and I am not sure theres anything to be done about it.
-###### Wrong chip used
-  Be sure to check the model on the chip itself.  I noticed that the behavior of the chip was only different when uploading code.   Specifically,
-  some model numbers would upload once, and then refuse to be reprogrammed again, while running the code they received indefinitely.
-  Other models would be bricked once the fuse values are changed.  Be sure to use exactly what's listed.
+###### Using 328 instead of 328p
+
+If using the 328 instead of the 328p you'll need to open up the arduino IDE settings file.  Go to the install location for you arduino IDE, typically in C:/Program Files(x86)/Arduino/
+
+Then go into hardware, and open the boards file. In this file there is a hardware signature that needs to be changed.  You can find what you need to change it to by opening the arduino IDE and attempting to burn the bootloader.  It should tell you there's an incorrect signature, and what it is.  
+
+After you change this you can program  the non-P versions.  This extra step of difficulty, along with the lesser efficiency is why these chips arin't recommended.
+
 
 ###### Out of sync
   If you get this error, chances are you just set up the breadboard circuit to be used.  If that's the case, double check
