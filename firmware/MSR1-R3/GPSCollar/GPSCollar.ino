@@ -168,6 +168,16 @@ void loop()
                   hours+=24;//shift to garuntee the number is positive (not -3 am)
                 hours=hours%24; //wrap around the back end 
 
+
+                int days=gps.date.day();
+                if (hours<=23&&gps.time.hour()<=TIMEZONEADJ)//correct the day after converting time zone.
+                {
+                  days--;
+                }
+                else if(gps.time.hour()<=23&&hours<=TIMEZONEADJ)
+                {
+                  days++;
+                }
 //in here valid numbers are detected, so we can save that to the SD card and then initialize sleep.
 
               dataFile = SD.open("gpslog.csv", FILE_WRITE); //open SD
@@ -176,7 +186,7 @@ void loop()
                 //Print to SD
                 dataFile.print(String(gps.date.year())  +",");
                 dataFile.print(String(gps.date.month())+",");
-                dataFile.print(String(gps.date.day())+",");
+                dataFile.print(String(days)+",");
      
                 dataFile.print(String(hours)+",");
                 dataFile.print(String(gps.time.minute())+",");
