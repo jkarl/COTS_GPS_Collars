@@ -233,6 +233,7 @@ void loop()
                 f_wdt = 0;
                 ss.end(); //Required. WTD will not work properly otherwise.
                 digitalWrite(GPSPOWER,LOW);
+                digitalWrite(LED1,LOW);
                 delay(50);
                 for(int sec=0, minutes=0, hours=0;hours<LONGSLEEP;sec+=8)
                 {
