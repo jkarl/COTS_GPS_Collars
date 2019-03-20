@@ -68,7 +68,11 @@ int NumFromSD();
  ***************************************************/
 ISR(WDT_vect)
 {
+//This wakes the system, nothing actually needs to happen here
 
+//It appears the interrupt flag doesn't need to be cleared, which is strange.
+  MCUSR &= ~(1<<WDRF); 
+//I've included it because it SHOULD need to be cleared.
 }
 
 
