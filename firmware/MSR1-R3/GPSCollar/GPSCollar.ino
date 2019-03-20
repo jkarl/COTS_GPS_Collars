@@ -32,7 +32,6 @@ cause the units to stop working.
 #define GPSPOWER (7)
 #define SDCHIPSELECT (8)
 
-volatile int f_wdt=1;
 
 uint32_t GPSBaud = 9600; //Set by the GPS manual.  The NEO M8N uses this baud rate.  Many use 4800 instead.
 
@@ -69,14 +68,7 @@ int NumFromSD();
  ***************************************************/
 ISR(WDT_vect)
 {
-  if(f_wdt == 0)
-  {
-    f_wdt=1;
-  }
-  else
-  {
-    //Serial.println("WDT Overrun!!!");
-  }
+
 }
 
 
@@ -123,12 +115,12 @@ void enterSleep(void)
  ***************************************************/
 void setup()
 {
-  Serial.begin(4800);
-  Serial.println("Starting");
+  //Serial.begin(4800);
+  //Serial.println("Starting");
   R1Begin();
   LoadSettings();
-  delay(500);
-  digitalWrite(LED1,LOW);
+  //delay(500);
+  //digitalWrite(LED1,LOW);
 }
 
 
@@ -145,12 +137,19 @@ void setup()
  ***************************************************/
 void loop()
 {
-  if(f_wdt == 1)
+
+/***ENABLE ALL***/
+
+  digitalWrite(LED1,HIGH);
+  digitalWrite(GPSPOWER,HIGH);
+  for(int sec=0;sec<30;sec+=8) //Warm the GPS without spending processing power
   {
-    f_wdt = 0;
+    enterSleep();
   }
-  else
-  {
+  ss.begin(GPSBaud);
+  delay(50);
+
+
     while (ss.available() > 0)//GPS should almost always be available
   {
     if (gps.encode(ss.read()))
@@ -163,6 +162,8 @@ void loop()
           {
             if(gps.time.isValid()&&gps.time.isUpdated())//the && time prevents double writtings
             {
+
+/************VALID NUMBERS DETECTED, CONVERT TIME AND DATE****************/
                 int hours=gps.time.hour()+TIMEZONEADJ; //convert time zones
                 if(hours<0)
                   hours+=24;//shift to garuntee the number is positive (not -3 am)
@@ -178,7 +179,10 @@ void loop()
                 {
                   days++;
                 }
-//in here valid numbers are detected, so we can save that to the SD card and then initialize sleep.
+
+                
+/**********NUMBERS CONVERTERED WRITE TO SD**********************/
+
 
               dataFile = SD.open("gpslog.csv", FILE_WRITE); //open SD
               if (dataFile)
@@ -200,7 +204,13 @@ void loop()
                                                       // float printed both to the terminal, and to the SD card.
                
                 dataFile.close();//Close SD
-
+                
+                //blink to indicate reading
+                digitalWrite(LED1,LOW);
+                delay(100);
+                digitalWrite(LED1,HIGH);
+                delay(100);
+                digitalWrite(LED1,LOW);
                 //if(Serialprinting)
                 //{
                 //Serial.println("Wrote this to SD card:");
@@ -227,18 +237,22 @@ void loop()
                 delay(500);
                 digitalWrite(LED2,LOW);
               }
-              if(hours>=BEGINNIGHT&&hours<ENDNIGHT)//Night Time detected
-              {
-                delay(50);
-                f_wdt = 0;
+
+/**********************POWER OFF ADD ONS**********************/
+
                 ss.end(); //Required. WTD will not work properly otherwise.
-                digitalWrite(GPSPOWER,LOW);
-                digitalWrite(LED1,LOW);
-                delay(50);
-                for(int sec=0, minutes=0, hours=0;hours<LONGSLEEP;sec+=8)
+                delay(50);//stability
+                digitalWrite(GPSPOWER,LOW);//shut down gps
+                digitalWrite(LED1,LOW);//indicate shut down
+                delay(50);//stability
+
+/**********************HOW LONG WILL THE DEVICE SLEEP**********************/
+              
+              if(hours>=BEGINNIGHT&&hours<ENDNIGHT)//Night Time detected
+              {      
+                for(int sec=0, minutes=0, hours=0;hours<LONGSLEEP;sec+=8) //Actual waiting happens here
                 {
                   enterSleep();
-                  f_wdt = 0;
                   if(sec>=60)
                   {
                     minutes++;
@@ -250,53 +264,24 @@ void loop()
                     minutes=0;
                   }
                 }
-                digitalWrite(GPSPOWER,HIGH);
-                for(int sec=0;sec<30;sec+=8) //Warm the GPS without spending processing power
-                {
-                  enterSleep();
-                  f_wdt = 0;
-                }
-                ss.begin(GPSBaud);
               }
-              else
+              else //Night time is not detected
               {
-                digitalWrite(LED1,LOW);
-                digitalWrite(LED2,LOW);
-                delay(50);
-                f_wdt = 0;
-                ss.end();//Required. WTD will not work properly otherwise.
-                digitalWrite(GPSPOWER,LOW);
-                delay(50);
-                digitalWrite(LED1,LOW);
-                delay(100);
-                digitalWrite(LED1,HIGH);
-                delay(100);
-                digitalWrite(LED1,LOW);
-                for(int sec=0, minutes=0;minutes<SHORTSLEEP;sec+=8)
+                for(int sec=0, minutes=0;minutes<SHORTSLEEP;sec+=8) //Actual waiting happens here
                 {
                   enterSleep();
-                  f_wdt = 0;
                   if(sec>=60)
                   {
                     minutes++;
                     sec=0;
                   }
                 }
-                digitalWrite(LED1,HIGH);
-                digitalWrite(GPSPOWER,HIGH);
-                for(int sec=0;sec<30;sec+=8) //Warm the GPS without spending processing power
-                {
-                  enterSleep();
-                  f_wdt = 0;
-                }
-                ss.begin(GPSBaud);
               }
             }
           }
         }
       }
     }  
-  }
   }
 }
 
@@ -314,19 +299,16 @@ void loop()
  ***************************************************/
 void R1Begin()
 {
+  /*** initialize outputs ***/
   pinMode(GPSPOWER,OUTPUT);
   pinMode(LED1,OUTPUT);
   pinMode(LED2,OUTPUT);
-  digitalWrite(LED1,HIGH);
-  digitalWrite(GPSPOWER,HIGH);
-  ss.begin(GPSBaud);
-
-  delay(100); //Allow for serial print to complete.
+  
 
   /*** Setup the WDT ***/
   
   /* Clear the reset flag. */
-  MCUSR &= ~(1<<WDRF);
+  MCUSR &= ~(1<<WDRF); 
   
   /* In order to change WDE or the prescaler, we need to
    * set WDCE (This will allow updates for 4 clock cycles).
@@ -340,7 +322,7 @@ void R1Begin()
   WDTCSR |= _BV(WDIE);
   
   //Serial.println("Initialisation complete.");
-  delay(100); //Allow for serial print to complete.
+  delay(50); //Allow for serial print to complete.
   //digitalWrite(LED1,LOW);
 }
 
