@@ -37,7 +37,8 @@ uint32_t GPSBaud = 9600; //Set by the GPS manual.  The NEO M8N uses this baud ra
 
 short int TIMEZONEADJ=0; //This value is ADDED to all time prints.
 short int BEGINNIGHT=20,ENDNIGHT=23; //24 hour format for the window that begins longer sleep.  Suggested to keep this window small to avoid long sleeping twice.  Wouldnt go over 5.
-
+short int ENDMONTH=13;
+short int ENDDAY=40;
 short int DESIREDHDOP=2500; //not counting the 10 multuplier - also set for indoor use.
 
 short int LONGSLEEP=8; 
@@ -73,6 +74,7 @@ ISR(WDT_vect)
 //It appears the interrupt flag doesn't need to be cleared, which is strange.
   MCUSR &= ~(1<<WDRF); 
 //I've included it because it SHOULD need to be cleared.
+
 }
 
 
@@ -167,21 +169,16 @@ void loop()
             if(gps.time.isValid()&&gps.time.isUpdated())//the && time prevents double writtings
             {
 
-/************VALID NUMBERS DETECTED, CONVERT TIME AND DATE****************/
-                int hours=gps.time.hour()+TIMEZONEADJ; //convert time zones
-                if(hours<0)
-                  hours+=24;//shift to garuntee the number is positive (not -3 am)
-                hours=hours%24; //wrap around the back end 
-
-
-                int days=gps.date.day();
-                if (hours<=23&&gps.time.hour()<=TIMEZONEADJ)//correct the day after converting time zone.
+/************VALID NUMBERS DETECTED, CHECK DATE****************/
+                if(gps.date.month()==ENDMONTH&&gps.date.day()>=ENDDAY)
                 {
-                  days--;
-                }
-                else if(gps.time.hour()<=23&&hours<=TIMEZONEADJ)
-                {
-                  days++;
+                  while(1)
+                  {
+                    enterSleep();
+                    digitalWrite(LED2,HIGH);
+                    delay(500);
+                    digitalWrite(LED2,LOW);
+                  }
                 }
 
                 
@@ -194,9 +191,9 @@ void loop()
                 //Print to SD
                 dataFile.print(String(gps.date.year())  +",");
                 dataFile.print(String(gps.date.month())+",");
-                dataFile.print(String(days)+",");
+                dataFile.print(String(gps.date.day())+",");
      
-                dataFile.print(String(hours)+",");
+                dataFile.print(String(gps.time.hour())+",");
                 dataFile.print(String(gps.time.minute())+",");
                 dataFile.print(String(gps.time.second())+",");
 
@@ -252,7 +249,7 @@ void loop()
 
 /**********************HOW LONG WILL THE DEVICE SLEEP**********************/
               
-              if(hours>=BEGINNIGHT&&hours<ENDNIGHT)//Night Time detected
+              if(gps.time.hour()>=BEGINNIGHT&&gps.time.hour()<ENDNIGHT)//Night Time detected
               {      
                 for(int sec=0, minutes=0, hours=0;hours<LONGSLEEP;sec+=8) //Actual waiting happens here
                 {
@@ -386,6 +383,8 @@ void LoadSettings()
     //Serial.print("GPS baud rate: ");
     //Serial.println(GPSBaud);
     //Serialprinting=NumFromSD();
+    ENDMONTH=NumFromSD();
+    ENDDAY=NumFromSD();
   }
   else
   {
