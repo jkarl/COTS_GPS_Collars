@@ -31,7 +31,8 @@ cause the units to stop working.
 #define LED2 (6)
 #define GPSPOWER (7)
 #define SDCHIPSELECT (8)
-
+#define GREENLED (LED1)
+#define REDLED (LED2)
 
 uint32_t GPSBaud = 9600; //Set by the GPS manual.  The NEO M8N uses this baud rate.  Many use 4800 instead.
 
@@ -43,7 +44,7 @@ short int DESIREDHDOP=2500; //not counting the 10 multuplier - also set for indo
 
 short int LONGSLEEP=8; 
 short int SHORTSLEEP=4;
-
+short int sleeping=1;
 // The TinyGPS++ object
 TinyGPSPlus gps;
 //SD file object
@@ -124,7 +125,9 @@ void setup()
   //Serial.begin(4800);
   //Serial.println("Starting");
   R1Begin();
+  //Serial.println("Board Initialized");
   LoadSettings();
+  //Serial.println("Settings Loaded");
   //delay(500);
   //digitalWrite(LED1,LOW);
 }
@@ -145,16 +148,15 @@ void loop()
 {
 
 /***ENABLE ALL***/
-
-  digitalWrite(LED1,HIGH);
-  digitalWrite(GPSPOWER,HIGH);
-  for(int sec=0;sec<30;sec+=8) //Warm the GPS without spending processing power
+  if(sleeping)
   {
-    enterSleep();
+    sleeping=0;
+    Serial.begin(4800);
+    digitalWrite(LED1,HIGH);
+    digitalWrite(GPSPOWER,HIGH); 
+    delay(50); 
+    ss.begin(GPSBaud);
   }
-  ss.begin(GPSBaud);
-  delay(50);
-
 
     while (ss.available() > 0)//GPS should almost always be available
   {
@@ -170,7 +172,7 @@ void loop()
             {
 
 /************VALID NUMBERS DETECTED, CHECK DATE****************/
-                if(gps.date.month()==ENDMONTH&&gps.date.day()>=ENDDAY)
+                if(gps.date.month()==ENDMONTH&&gps.date.day()>=ENDDAY)//end of tests, wait forever.
                 {
                   while(1)
                   {
@@ -214,20 +216,21 @@ void loop()
                 digitalWrite(LED1,LOW);
                 //if(Serialprinting)
                 //{
-                //Serial.println("Wrote this to SD card:");
-                //Serial.print(String(gps.date.year())+",");
-                //Serial.print(String(gps.date.month())+",");
-                //Serial.print(String(gps.date.day())+",");
+                /*Serial.println("Wrote this to SD card:");
+                Serial.print(String(gps.date.year())+",");
+                Serial.print(String(gps.date.month())+",");
+                Serial.print(String(gps.date.day())+",");
 
-                //Serial.print(String(gps.time.hour())+",");
-                //Serial.print(String(gps.time.minute())+",");
-                //Serial.print(String(gps.time.second())+",");
+                Serial.print(String(gps.time.hour())+",");
+                Serial.print(String(gps.time.minute())+",");
+                Serial.print(String(gps.time.second())+",");
 
-                //Serial.print(String(gps.hdop.value())+",");
-                //Serial.print(String(gps.satellites.value())+",");
+                Serial.print(String(gps.hdop.value())+",");
+                Serial.print(String(gps.satellites.value())+",");
 
-                //Serial.print(gps.location.lat(),8);Serial.print(",");
-                //Serial.println(gps.location.lng(),8); // Printing the commas by themselves allows me to force the length of the
+                Serial.print(gps.location.lat(),8);Serial.print(",");
+                Serial.println(gps.location.lng(),8); // Printing the commas by themselves allows me to force the length of the
+                */
                 //}                     // float printed both to the terminal, and to the SD card.
                                                       
               }
@@ -248,7 +251,9 @@ void loop()
                 delay(50);//stability
 
 /**********************HOW LONG WILL THE DEVICE SLEEP**********************/
-              
+              //Serial.println("Sleeping...");
+              //Serial.end();
+              sleeping=1;
               if(gps.time.hour()>=BEGINNIGHT&&gps.time.hour()<ENDNIGHT)//Night Time detected
               {      
                 for(int sec=0, minutes=0, hours=0;hours<LONGSLEEP;sec+=8) //Actual waiting happens here
@@ -345,10 +350,10 @@ void LoadSettings()
 {
   if (!SD.begin(SDCHIPSELECT)) // see if the card is present and can be initialized, also sets the object to hold onto that chip select pin
   {  
-    Serial.println("SD fail"); //Tell PC, can be commented out
-    Serial.println("Halting...");
-    digitalWrite(LED1,LOW); // turn off green LED
-    digitalWrite(LED2,HIGH); //turn on RED LED
+    //Serial.println("SD fail"); //Tell PC, can be commented out
+    //Serial.println("Halting...");
+    digitalWrite(GREENLED,LOW); 
+    digitalWrite(REDLED,HIGH); 
     SD.end();
     while(1);
   }
@@ -384,6 +389,7 @@ void LoadSettings()
     //Serial.println(GPSBaud);
     //Serialprinting=NumFromSD();
     ENDMONTH=NumFromSD();
+    //Serial.print("End Month: ");
     ENDDAY=NumFromSD();
   }
   else
