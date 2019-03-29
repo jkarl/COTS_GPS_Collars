@@ -20,9 +20,9 @@ cause the units to stop working.
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 #include <SD.h>
-#include <avr/sleep.h>
-#include <avr/power.h>
-#include <avr/wdt.h>
+//#include <avr/sleep.h>
+//#include <avr/power.h>
+//#include <avr/wdt.h>
 
 #define LED_PIN (5)
 #define RXPin (4)
