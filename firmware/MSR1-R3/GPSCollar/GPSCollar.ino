@@ -68,7 +68,7 @@ int NumFromSD();
  *               is executed when watchdog timed out.
  *
  ***************************************************/
-ISR(WDT_vect)
+/*ISR(WDT_vect)
 {
 //This wakes the system, nothing actually needs to happen here
 
@@ -77,7 +77,7 @@ ISR(WDT_vect)
 //I've included it because it SHOULD need to be cleared.
 
 }
-
+*/
 
 /***************************************************
  *  Name:        enterSleep
@@ -89,20 +89,21 @@ ISR(WDT_vect)
  *  Description: Enters the arduino into sleep mode.
  *
  ***************************************************/
-void enterSleep(void)
-{
-  set_sleep_mode(SLEEP_MODE_PWR_SAVE);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
-  sleep_enable();
+
+//void enterSleep(void)
+//{
+ // set_sleep_mode(SLEEP_MODE_PWR_SAVE);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
+ // sleep_enable();
   
   /* Now enter sleep mode. */
-  sleep_mode();
+  //sleep_mode();
   
   /* The program will continue from here after the WDT timeout*/
-  sleep_disable(); /* First thing to do is disable sleep. */
+  //sleep_disable(); /* First thing to do is disable sleep. */
   
   /* Re-enable the peripherals. */
-  power_all_enable();
-}
+  //power_all_enable();
+//}
 
 
 
@@ -176,9 +177,10 @@ void loop()
                 {
                   while(1)
                   {
-                    enterSleep();
+                    //enterSleep();
+                    delay(2950);
                     digitalWrite(LED2,HIGH);
-                    delay(500);
+                    delay(50);
                     digitalWrite(LED2,LOW);
                   }
                 }
@@ -258,7 +260,8 @@ void loop()
               {      
                 for(int sec=0, minutes=0, hours=0;hours<LONGSLEEP;sec+=8) //Actual waiting happens here
                 {
-                  enterSleep();
+                  //enterSleep();
+                  delay(8000);
                   if(sec>=60)
                   {
                     minutes++;
@@ -275,7 +278,8 @@ void loop()
               {
                 for(int sec=0, minutes=0;minutes<SHORTSLEEP;sec+=8) //Actual waiting happens here
                 {
-                  enterSleep();
+                  //enterSleep();
+                  delay(8000);
                   if(sec>=60)
                   {
                     minutes++;
@@ -314,18 +318,18 @@ void R1Begin()
   /*** Setup the WDT ***/
   
   /* Clear the reset flag. */
-  MCUSR &= ~(1<<WDRF); 
+  //MCUSR &= ~(1<<WDRF); 
   
   /* In order to change WDE or the prescaler, we need to
    * set WDCE (This will allow updates for 4 clock cycles).
    */
-  WDTCSR |= (1<<WDCE) | (1<<WDE);
+  //WDTCSR |= (1<<WDCE) | (1<<WDE);
 
   /* set new watchdog timeout prescaler value */
-  WDTCSR = 1<<WDP0 | 1<<WDP3; /* 8.0 seconds */
+  //WDTCSR = 1<<WDP0 | 1<<WDP3; /* 8.0 seconds */
   
   /* Enable the WD interrupt (note no reset). */
-  WDTCSR |= _BV(WDIE);
+  //WDTCSR |= _BV(WDIE);
   
   //Serial.println("Initialisation complete.");
   delay(50); //Allow for serial print to complete.
