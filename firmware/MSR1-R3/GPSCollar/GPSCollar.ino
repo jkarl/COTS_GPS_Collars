@@ -149,15 +149,13 @@ void loop()
 {
 
 /***ENABLE ALL***/
-  if(sleeping)
-  {
-    sleeping=0;
-    Serial.begin(4800);
+
+    //Serial.begin(4800);
     digitalWrite(LED1,HIGH);
     digitalWrite(GPSPOWER,HIGH); 
     delay(50); 
     ss.begin(GPSBaud);
-  }
+
 
     while (ss.available() > 0)//GPS should almost always be available
   {
@@ -207,7 +205,7 @@ void loop()
                 dataFile.print(gps.location.lat(),10);dataFile.print(",");
                 dataFile.println(gps.location.lng(),10);// Printing the commas by themselves allows me to force the length of the
                                                       // float printed both to the terminal, and to the SD card.
-               
+               delay(100);
                 dataFile.close();//Close SD
                 
                 //blink to indicate reading
