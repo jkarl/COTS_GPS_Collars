@@ -159,6 +159,16 @@ void loop()
 {
     if (ss.available() > 0)//GPS should almost always be available
       gps.encode(ss.read());
+    else
+    {
+      ss.end();
+      digitalWrite(GPSPOWER,HIGH);
+      digitalWrite(REDLED,HIGH);
+      delay(100);
+      ss.begin(GPSBaud);
+      digitalWrite(REDLED,LOW);
+      delay(1000);
+    }
       if(gps.location.isValid())
       {
         if(gps.hdop.isValid()&&gps.hdop.value()<DESIREDHDOP)
@@ -253,7 +263,7 @@ void loop()
               //Serial.println("Sleeping...");
               //Serial.end();
               sleeping=1;
-              if(gps.time.hour()>=BEGINNIGHT&&gps.time.hour()<ENDNIGHT)//Night Time detected
+              if(gps.time.hour()>=(int)BEGINNIGHT&&gps.time.hour()<(int)ENDNIGHT)//Night Time detected
               {      
                 for(int sec=0, minutes=0, hours=0;hours<LONGSLEEP;sec+=8) //Actual waiting happens here
                 {
@@ -284,6 +294,7 @@ void loop()
                   }
                 }
               }
+              
               digitalWrite(LED1,HIGH);
               digitalWrite(GPSPOWER,HIGH); 
               delay(500); 
