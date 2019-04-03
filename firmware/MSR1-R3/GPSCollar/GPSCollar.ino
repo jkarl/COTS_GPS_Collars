@@ -20,6 +20,7 @@ cause the units to stop working.
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 #include <SD.h>
+#include <SPI.h>
 //#include <avr/sleep.h>
 //#include <avr/power.h>
 //#include <avr/wdt.h>
@@ -45,6 +46,8 @@ short int DESIREDHDOP=2500; //not counting the 10 multuplier - also set for indo
 short int LONGSLEEP=8; 
 short int SHORTSLEEP=4;
 short int sleeping=1;
+int lastMin=-1;
+int lastSec=-1;
 // The TinyGPS++ object
 TinyGPSPlus gps;
 //SD file object
@@ -131,6 +134,13 @@ void setup()
   //Serial.println("Settings Loaded");
   //delay(500);
   //digitalWrite(LED1,LOW);
+  SPI.setClockDivider(SPI_CLOCK_DIV2); 
+    digitalWrite(LED1,HIGH);
+    digitalWrite(GPSPOWER,HIGH); 
+    delay(500); 
+    digitalWrite(GPSPOWER,HIGH); 
+    delay(50);
+    ss.begin(GPSBaud);
 }
 
 
@@ -147,20 +157,8 @@ void setup()
  ***************************************************/
 void loop()
 {
-
-/***ENABLE ALL***/
-
-    //Serial.begin(4800);
-    digitalWrite(LED1,HIGH);
-    digitalWrite(GPSPOWER,HIGH); 
-    delay(50); 
-    ss.begin(GPSBaud);
-
-
-    while (ss.available() > 0)//GPS should almost always be available
-  {
-    if (gps.encode(ss.read()))
-    { 
+    if (ss.available() > 0)//GPS should almost always be available
+      gps.encode(ss.read());
       if(gps.location.isValid())
       {
         if(gps.hdop.isValid()&&gps.hdop.value()<DESIREDHDOP)
@@ -216,7 +214,7 @@ void loop()
                 digitalWrite(LED1,LOW);
                 //if(Serialprinting)
                 //{
-                /*Serial.println("Wrote this to SD card:");
+                Serial.println("Wrote this to SD card:");
                 Serial.print(String(gps.date.year())+",");
                 Serial.print(String(gps.date.month())+",");
                 Serial.print(String(gps.date.day())+",");
@@ -230,7 +228,7 @@ void loop()
 
                 Serial.print(gps.location.lat(),8);Serial.print(",");
                 Serial.println(gps.location.lng(),8); // Printing the commas by themselves allows me to force the length of the
-                */
+                
                 //}                     // float printed both to the terminal, and to the SD card.
                                                       
               }
@@ -240,6 +238,7 @@ void loop()
                 digitalWrite(LED2,HIGH);
                 delay(500);
                 digitalWrite(LED2,LOW);
+                dataFile.close();
               }
 
 /**********************POWER OFF ADD ONS**********************/
@@ -285,12 +284,16 @@ void loop()
                   }
                 }
               }
+              digitalWrite(LED1,HIGH);
+              digitalWrite(GPSPOWER,HIGH); 
+              delay(500); 
+              digitalWrite(GPSPOWER,HIGH); 
+              delay(50);
+              ss.begin(GPSBaud);
             }
           }
         }
       }
-    }  
-  }
 }
 
 
