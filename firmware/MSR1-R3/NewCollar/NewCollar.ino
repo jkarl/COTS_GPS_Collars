@@ -19,8 +19,8 @@ NeoSWSerial gpsPort(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
 //#define gpsPort Serial  // Alternatively, use Serial1 on the Leonardo, Mega or Due
 #define GPS_BAUD 9600    // GPS module baud rate. GP3906 defaults to 9600.
 
-      bool          waitingForFix = false;
-const unsigned long GPS_TIMEOUT   = 120000; // 2 minutes
+      bool          waitingForFix = true;
+const unsigned long GPS_TIMEOUT   = 60000; // 2 minutes
       unsigned long gpsStart      = 0;
 
 const int           GPSpower      = 7;
@@ -29,9 +29,12 @@ File dataFile;
 
 void setup() {
   Serial.begin(9600);
+  Serial.println("Starting....");
   pinMode(GPSpower, OUTPUT);
+  digitalWrite(GPSpower,HIGH);
   gpsPort.begin(GPS_BAUD);
-
+  pinMode(REDLED,OUTPUT);
+  pinMode(GREENLED,OUTPUT);
   if (!SD.begin(SDCHIPSELECT)) // see if the card is present and can be initialized, also sets the object to hold onto that chip select pin
   {  
     //Serial.println("SD fail"); //Tell PC, can be commented out
@@ -46,8 +49,7 @@ void setup() {
 
 
 void loop() {
-  bool turnGPSoff = false;
-  
+  digitalWrite(GREENLED,!digitalRead(GREENLED));
   // Is a GPS fix available?
   if (GPS.available( gpsPort )) {
     fix = GPS.read();
@@ -56,10 +58,10 @@ void loop() {
       printGPSInfo();
       Serial.println( millis() - gpsStart ); // DEBUG
 
-      if (fix.valid.satellites && (fix.satellites > 6)) {// I dont trust this
-        waitingForFix = false;
-        turnGPSoff    = true;
-      }
+      //if (fix.valid.satellites && (fix.satellites > 6)) {// I dont trust this
+      //  waitingForFix = false;
+      //  turnGPSoff    = true;
+      //}
     }
   }
 
@@ -71,8 +73,11 @@ void loop() {
 
   if (turnGPSoff) {
     digitalWrite(GPSpower, LOW);
+    digitalWrite(GREENLED,LOW);
+    digitalWrite(REDLED,HIGH);
     Serial.println( F("GPS Toggled") );
     delay(1000*30);
+    digitalWrite(REDLED,LOW);
     digitalWrite(GPSpower,HIGH);
     waitingForFix = true;
     turnGPSoff    = false;
@@ -89,8 +94,9 @@ void printGPSInfo()
   if (fix.valid.speed){
   if (fix.valid.date){
   if (fix.valid.time){
-  if (fix.valid.satellites){
+  if (fix.valid.satellites&& (fix.satellites > 4)){
   {
+    Serial.println(fix.dateTime.hours);
     dataFile = SD.open("gpslog.csv", FILE_WRITE); //open SD
     if (dataFile)
     dataFile.print(String(fix.dateTime.year)  +",");
