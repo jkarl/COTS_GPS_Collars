@@ -36,6 +36,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Starting....");
   SystemInitialize();
+  LoadSettings();
   digitalWrite(GPSpower,HIGH);
   gpsPort.begin(GPS_BAUD);
   Blink(GREENLED);
@@ -65,10 +66,10 @@ void loop() {
 
   
   // Have we waited too long for a GPS fix?
- // if (waitingForFix && (millis() - gpsStart > GPS_TIMEOUT)) {
- //   waitingForFix = false;
- //   turnGPSoff    = true;
-  //}
+  if (waitingForFix && (millis() - GPS_TIME > GPS_TIMEOUT)) {
+    waitingForFix = false;
+    turnGPSoff    = true;
+ }
 //******************************************
  
  //Sleep 
@@ -77,11 +78,30 @@ void loop() {
     digitalWrite(GPSpower, LOW);
     digitalWrite(GREENLED,LOW);
     digitalWrite(REDLED,HIGH);
-    Sleep(1);
+    if((int)fix.dateTime.month==ENDMONTH)
+      if((int)fix.dateTime.day==ENDDAY)
+      {
+        while(1)
+        {
+          //sleep forever
+          Blink(GREENLED);
+          Blink(REDLED);
+          Sleep(1);
+        }
+      }
+    if((int)fix.dateTime.hours>=BEGINNIGHT&&(int)fix.dateTime.hours<=ENDNIGHT)
+    {
+      Sleep(60*LONGSLEEP);
+    }
+    else
+    {
+      Sleep(SHORTSLEEP);
+    }
     digitalWrite(REDLED,LOW);
     digitalWrite(GPSpower,HIGH);
     waitingForFix = true;
     turnGPSoff    = false;
+    GPS_TIME=millis();
     delay(15*Second); 
   }
   //******************************
