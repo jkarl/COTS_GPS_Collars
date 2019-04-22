@@ -20,9 +20,10 @@ cause the units to stop working.
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 #include <SD.h>
-#include <avr/sleep.h>
-#include <avr/power.h>
-#include <avr/wdt.h>
+#include <SPI.h>
+//#include <avr/sleep.h>
+//#include <avr/power.h>
+//#include <avr/wdt.h>
 
 #define LED_PIN (5)
 #define RXPin (4)
@@ -31,19 +32,22 @@ cause the units to stop working.
 #define LED2 (6)
 #define GPSPOWER (7)
 #define SDCHIPSELECT (8)
-
-volatile int f_wdt=1;
+#define GREENLED (LED1)
+#define REDLED (LED2)
 
 uint32_t GPSBaud = 9600; //Set by the GPS manual.  The NEO M8N uses this baud rate.  Many use 4800 instead.
 
 short int TIMEZONEADJ=0; //This value is ADDED to all time prints.
 short int BEGINNIGHT=20,ENDNIGHT=23; //24 hour format for the window that begins longer sleep.  Suggested to keep this window small to avoid long sleeping twice.  Wouldnt go over 5.
-
+short int ENDMONTH=13;
+short int ENDDAY=40;
 short int DESIREDHDOP=2500; //not counting the 10 multuplier - also set for indoor use.
 
 short int LONGSLEEP=8; 
 short int SHORTSLEEP=4;
-
+short int sleeping=1;
+int lastMin=-1;
+int lastSec=-1;
 // The TinyGPS++ object
 TinyGPSPlus gps;
 //SD file object
@@ -67,18 +71,16 @@ int NumFromSD();
  *               is executed when watchdog timed out.
  *
  ***************************************************/
-ISR(WDT_vect)
+/*ISR(WDT_vect)
 {
-  if(f_wdt == 0)
-  {
-    f_wdt=1;
-  }
-  else
-  {
-    //Serial.println("WDT Overrun!!!");
-  }
-}
+//This wakes the system, nothing actually needs to happen here
 
+//It appears the interrupt flag doesn't need to be cleared, which is strange.
+  MCUSR &= ~(1<<WDRF); 
+//I've included it because it SHOULD need to be cleared.
+
+}
+*/
 
 /***************************************************
  *  Name:        enterSleep
@@ -90,20 +92,21 @@ ISR(WDT_vect)
  *  Description: Enters the arduino into sleep mode.
  *
  ***************************************************/
-void enterSleep(void)
-{
-  set_sleep_mode(SLEEP_MODE_PWR_SAVE);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
-  sleep_enable();
+
+//void enterSleep(void)
+//{
+ // set_sleep_mode(SLEEP_MODE_PWR_SAVE);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
+ // sleep_enable();
   
   /* Now enter sleep mode. */
-  sleep_mode();
+  //sleep_mode();
   
   /* The program will continue from here after the WDT timeout*/
-  sleep_disable(); /* First thing to do is disable sleep. */
+  //sleep_disable(); /* First thing to do is disable sleep. */
   
   /* Re-enable the peripherals. */
-  power_all_enable();
-}
+  //power_all_enable();
+//}
 
 
 
@@ -124,8 +127,20 @@ void enterSleep(void)
 void setup()
 {
   //Serial.begin(4800);
-  LoadSettings();
+  //Serial.println("Starting");
   R1Begin();
+  //Serial.println("Board Initialized");
+  LoadSettings();
+  //Serial.println("Settings Loaded");
+  //delay(500);
+  //digitalWrite(LED1,LOW);
+  SPI.setClockDivider(SPI_CLOCK_DIV2); 
+    digitalWrite(LED1,HIGH);
+    digitalWrite(GPSPOWER,HIGH); 
+    delay(500); 
+    digitalWrite(GPSPOWER,HIGH); 
+    delay(50);
+    ss.begin(GPSBaud);
 }
 
 
@@ -142,16 +157,18 @@ void setup()
  ***************************************************/
 void loop()
 {
-  if(f_wdt == 1)
-  {
-    f_wdt = 0;
-  }
-  else
-  {
-    while (ss.available() > 0)//GPS should almost always be available
-  {
-    if (gps.encode(ss.read()))
-    { 
+    if (ss.available() > 0)//GPS should almost always be available
+      gps.encode(ss.read());
+    else
+    {
+      ss.end();
+      digitalWrite(GPSPOWER,HIGH);
+      digitalWrite(REDLED,HIGH);
+      delay(100);
+      ss.begin(GPSBaud);
+      digitalWrite(REDLED,LOW);
+      delay(1000);
+    }
       if(gps.location.isValid())
       {
         if(gps.hdop.isValid()&&gps.hdop.value()<DESIREDHDOP)
@@ -160,12 +177,23 @@ void loop()
           {
             if(gps.time.isValid()&&gps.time.isUpdated())//the && time prevents double writtings
             {
-                int hours=gps.time.hour()-TIMEZONEADJ; //convert time zones
-                if(hours<0)
-                  hours+=24;//shift to garuntee the number is positive (not -3 am)
-                hours=hours%24; //wrap around the back end 
 
-//in here valid numbers are detected, so we can save that to the SD card and then initialize sleep.
+/************VALID NUMBERS DETECTED, CHECK DATE****************/
+                if(gps.date.month()==ENDMONTH&&gps.date.day()>=ENDDAY)//end of tests, wait forever.
+                {
+                  while(1)
+                  {
+                    //enterSleep();
+                    delay(2950);
+                    digitalWrite(LED2,HIGH);
+                    delay(50);
+                    digitalWrite(LED2,LOW);
+                  }
+                }
+
+                
+/**********NUMBERS CONVERTERED WRITE TO SD**********************/
+
 
               dataFile = SD.open("gpslog.csv", FILE_WRITE); //open SD
               if (dataFile)
@@ -175,7 +203,7 @@ void loop()
                 dataFile.print(String(gps.date.month())+",");
                 dataFile.print(String(gps.date.day())+",");
      
-                dataFile.print(String(hours)+",");
+                dataFile.print(String(gps.time.hour())+",");
                 dataFile.print(String(gps.time.minute())+",");
                 dataFile.print(String(gps.time.second())+",");
 
@@ -185,25 +213,32 @@ void loop()
                 dataFile.print(gps.location.lat(),10);dataFile.print(",");
                 dataFile.println(gps.location.lng(),10);// Printing the commas by themselves allows me to force the length of the
                                                       // float printed both to the terminal, and to the SD card.
-               
+               delay(100);
                 dataFile.close();//Close SD
-
+                
+                //blink to indicate reading
+                digitalWrite(LED1,LOW);
+                delay(100);
+                digitalWrite(LED1,HIGH);
+                delay(100);
+                digitalWrite(LED1,LOW);
                 //if(Serialprinting)
                 //{
-                //Serial.println("Wrote this to SD card:");
-                //Serial.print(String(gps.date.year())+",");
-                //Serial.print(String(gps.date.month())+",");
-                //Serial.print(String(gps.date.day())+",");
+                Serial.println("Wrote this to SD card:");
+                Serial.print(String(gps.date.year())+",");
+                Serial.print(String(gps.date.month())+",");
+                Serial.print(String(gps.date.day())+",");
 
-                //Serial.print(String(gps.time.hour())+",");
-                //Serial.print(String(gps.time.minute())+",");
-                //Serial.print(String(gps.time.second())+",");
+                Serial.print(String(gps.time.hour())+",");
+                Serial.print(String(gps.time.minute())+",");
+                Serial.print(String(gps.time.second())+",");
 
-                //Serial.print(String(gps.hdop.value())+",");
-                //Serial.print(String(gps.satellites.value())+",");
+                Serial.print(String(gps.hdop.value())+",");
+                Serial.print(String(gps.satellites.value())+",");
 
-                //Serial.print(gps.location.lat(),8);Serial.print(",");
-                //Serial.println(gps.location.lng(),8); // Printing the commas by themselves allows me to force the length of the
+                Serial.print(gps.location.lat(),8);Serial.print(",");
+                Serial.println(gps.location.lng(),8); // Printing the commas by themselves allows me to force the length of the
+                
                 //}                     // float printed both to the terminal, and to the SD card.
                                                       
               }
@@ -213,18 +248,27 @@ void loop()
                 digitalWrite(LED2,HIGH);
                 delay(500);
                 digitalWrite(LED2,LOW);
+                dataFile.close();
               }
-              if(hours>=BEGINNIGHT&&hours<ENDNIGHT)//Night Time detected
-              {
-                delay(50);
-                f_wdt = 0;
+
+/**********************POWER OFF ADD ONS**********************/
+
                 ss.end(); //Required. WTD will not work properly otherwise.
-                digitalWrite(GPSPOWER,LOW);
-                delay(50);
-                for(int sec=0, minutes=0, hours=0;hours<LONGSLEEP;sec+=8)
+                delay(50);//stability
+                digitalWrite(GPSPOWER,LOW);//shut down gps
+                digitalWrite(LED1,LOW);//indicate shut down
+                delay(50);//stability
+
+/**********************HOW LONG WILL THE DEVICE SLEEP**********************/
+              //Serial.println("Sleeping...");
+              //Serial.end();
+              sleeping=1;
+              if(gps.time.hour()>=(int)BEGINNIGHT&&gps.time.hour()<(int)ENDNIGHT)//Night Time detected
+              {      
+                for(int sec=0, minutes=0, hours=0;hours<LONGSLEEP;sec+=8) //Actual waiting happens here
                 {
-                  enterSleep();
-                  f_wdt = 0;
+                  //enterSleep();
+                  delay(8000);
                   if(sec>=60)
                   {
                     minutes++;
@@ -236,50 +280,31 @@ void loop()
                     minutes=0;
                   }
                 }
-                digitalWrite(GPSPOWER,HIGH);
-                for(int sec=0;sec<30;sec+=8) //Warm the GPS without spending processing power
-                {
-                  enterSleep();
-                  f_wdt = 0;
-                }
-                ss.begin(GPSBaud);
               }
-              else
+              else //Night time is not detected
               {
-                digitalWrite(LED1,LOW);
-                digitalWrite(LED2,LOW);
-                delay(50);
-                f_wdt = 0;
-                ss.end();//Required. WTD will not work properly otherwise.
-                digitalWrite(GPSPOWER,LOW);
-                delay(50);
-                for(int sec=0, minutes=0;minutes<SHORTSLEEP;sec+=8)
+                for(int sec=0, minutes=0;minutes<SHORTSLEEP;sec+=8) //Actual waiting happens here
                 {
-                  enterSleep();
-                  f_wdt = 0;
+                  //enterSleep();
+                  delay(8000);
                   if(sec>=60)
                   {
                     minutes++;
                     sec=0;
                   }
                 }
-
-                digitalWrite(GPSPOWER,HIGH);
-                for(int sec=0;sec<30;sec+=8) //Warm the GPS without spending processing power
-                {
-                  enterSleep();
-                  f_wdt = 0;
-                }
-                ss.begin(GPSBaud);
               }
+              
+              digitalWrite(LED1,HIGH);
+              digitalWrite(GPSPOWER,HIGH); 
+              delay(500); 
+              digitalWrite(GPSPOWER,HIGH); 
+              delay(50);
+              ss.begin(GPSBaud);
             }
           }
         }
       }
-    }  
-  }
-
-  }
 }
 
 
@@ -296,34 +321,31 @@ void loop()
  ***************************************************/
 void R1Begin()
 {
+  /*** initialize outputs ***/
   pinMode(GPSPOWER,OUTPUT);
   pinMode(LED1,OUTPUT);
   pinMode(LED2,OUTPUT);
-  digitalWrite(LED1,HIGH);
-  digitalWrite(GPSPOWER,HIGH);
-  ss.begin(GPSBaud);
-
-  delay(100); //Allow for serial print to complete.
+  
 
   /*** Setup the WDT ***/
   
   /* Clear the reset flag. */
-  MCUSR &= ~(1<<WDRF);
+  //MCUSR &= ~(1<<WDRF); 
   
   /* In order to change WDE or the prescaler, we need to
    * set WDCE (This will allow updates for 4 clock cycles).
    */
-  WDTCSR |= (1<<WDCE) | (1<<WDE);
+  //WDTCSR |= (1<<WDCE) | (1<<WDE);
 
   /* set new watchdog timeout prescaler value */
-  WDTCSR = 1<<WDP0 | 1<<WDP3; /* 8.0 seconds */
+  //WDTCSR = 1<<WDP0 | 1<<WDP3; /* 8.0 seconds */
   
   /* Enable the WD interrupt (note no reset). */
-  WDTCSR |= _BV(WDIE);
+  //WDTCSR |= _BV(WDIE);
   
   //Serial.println("Initialisation complete.");
-  delay(100); //Allow for serial print to complete.
-  digitalWrite(LED1,LOW);
+  delay(50); //Allow for serial print to complete.
+  //digitalWrite(LED1,LOW);
 }
 
 
@@ -346,8 +368,8 @@ void LoadSettings()
   {  
     //Serial.println("SD fail"); //Tell PC, can be commented out
     //Serial.println("Halting...");
-    digitalWrite(LED1,LOW); // turn off green LED
-    digitalWrite(LED2,HIGH); //turn on RED LED
+    digitalWrite(GREENLED,LOW); 
+    digitalWrite(REDLED,HIGH); 
     SD.end();
     while(1);
   }
@@ -382,6 +404,9 @@ void LoadSettings()
     //Serial.print("GPS baud rate: ");
     //Serial.println(GPSBaud);
     //Serialprinting=NumFromSD();
+    ENDMONTH=NumFromSD();
+    //Serial.print("End Month: ");
+    ENDDAY=NumFromSD();
   }
   else
   {
