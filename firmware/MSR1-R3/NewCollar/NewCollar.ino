@@ -24,7 +24,7 @@ NeoSWSerial gpsPort(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
       int BEGINNIGHT=25;
       int ENDNIGHT=25;
       int GPS_BAUD=9600;
-      int ENDMONTH=0;
+      int ENDMONTH=-1;
       int ENDDAY=-1;
       bool          waitingForFix = true;
 const unsigned long GPS_TIMEOUT   = 60000; // 2 minutes
@@ -46,7 +46,7 @@ void setup() {
 
 
 void loop() {
-  digitalWrite(GREENLED,!digitalRead(GREENLED)); //heartbeat
+  //digitalWrite(GREENLED,!digitalRead(GREENLED)); //heartbeat
   
   // Is a GPS fix available?*******************
   if (GPS.available( gpsPort )) 
@@ -141,8 +141,8 @@ bool printGPSInfo()
     }
     else
     {
-      Blink(REDLED);
-      Blink(REDLED);
+      //Blink(REDLED);
+      //Blink(REDLED);
       return false;
     }
   }}}}}}}}
