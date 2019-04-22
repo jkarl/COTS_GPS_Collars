@@ -19,7 +19,7 @@
 NMEAGPS GPS;
 gps_fix fix;
 NeoSWSerial gpsPort(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
-      int SHORTSLEEP=1;
+      int SHORTSLEEP=4;
       int LONGSLEEP=8;
       int BEGINNIGHT=25;
       int ENDNIGHT=25;
@@ -36,7 +36,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Starting....");
   SystemInitialize();
-  LoadSettings();
+  //LoadSettings();
   digitalWrite(GPSpower,HIGH);
   gpsPort.begin(GPS_BAUD);
   Blink(GREENLED);
@@ -143,9 +143,9 @@ bool printGPSInfo()
     {
       Blink(REDLED);
       Blink(REDLED);
+      return false;
     }
   }}}}}}}}
-  return false;
 }
 
 void Sleep(int MinutesToSleep)
