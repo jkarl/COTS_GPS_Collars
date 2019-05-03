@@ -1,3 +1,5 @@
+//Software Version 1.0
+
 #include <NMEAGPS.h>
 #include <SD.h>
 
@@ -19,7 +21,7 @@
 NMEAGPS GPS;
 gps_fix fix;
 NeoSWSerial gpsPort(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
-      int SHORTSLEEP=4;
+      int SHORTSLEEP=9;
       int LONGSLEEP=8;
       int BEGINNIGHT=25;
       int ENDNIGHT=25;
@@ -27,7 +29,7 @@ NeoSWSerial gpsPort(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
       int ENDMONTH=-1;
       int ENDDAY=-1;
       bool          waitingForFix = true;
-const unsigned long GPS_TIMEOUT   = 60000; // 2 minutes
+const unsigned long GPS_TIMEOUT   = 60000;
       unsigned long GPS_TIME      = 0;
       bool turnGPSoff = false;
       File dataFile;
@@ -77,7 +79,7 @@ void loop() {
   {
     digitalWrite(GPSpower, LOW);
     digitalWrite(GREENLED,LOW);
-    digitalWrite(REDLED,HIGH);
+    //digitalWrite(REDLED,HIGH);
     if((int)fix.dateTime.month==ENDMONTH)
       if((int)fix.dateTime.day==ENDDAY)
       {
@@ -97,12 +99,15 @@ void loop() {
     {
       Sleep(SHORTSLEEP);
     }
+    
     digitalWrite(REDLED,LOW);
     digitalWrite(GPSpower,HIGH);
+    delay(45*Second);
+    Blink(GREENLED);
+    Blink(GREENLED); 
     waitingForFix = true;
     turnGPSoff    = false;
     GPS_TIME=millis();
-    delay(15*Second); 
   }
   //******************************
 
@@ -112,12 +117,8 @@ void loop() {
 bool printGPSInfo()
 {
   if (fix.valid.location){
-  if (fix.valid.altitude){
-  if (fix.valid.heading){
-  if (fix.valid.speed){
   if (fix.valid.date){
   if (fix.valid.time){
-  if (fix.valid.satellites&& (fix.satellites > 4)){
   {
     Serial.println(fix.dateTime.hours);
     dataFile = SD.open("gpslog.csv", FILE_WRITE); //open SD
@@ -137,6 +138,10 @@ bool printGPSInfo()
     dataFile.print(fix.latitude(),10);dataFile.print(",");
     dataFile.println(fix.longitude(),10);
     dataFile.close();
+    Blink(GREENLED);
+    Blink(GREENLED);
+    Blink(GREENLED);
+
     return true;
     }
     else
@@ -145,7 +150,7 @@ bool printGPSInfo()
       //Blink(REDLED);
       return false;
     }
-  }}}}}}}}
+  }}}}
 }
 
 void Sleep(int MinutesToSleep)
