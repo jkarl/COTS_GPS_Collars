@@ -1,5 +1,7 @@
 #include <NMEAGPS.h>
 #include <SD.h>
+#include <SPI.h>
+
 
 #define LED_PIN (5)
 #define RXPin (4)
@@ -15,51 +17,66 @@
 #define ARDUINO_GPS_TX 4 // GPS RX, Arduino TX pin
 #define Second 1000
 
+void LoadSettings();
+void Blink(int pin);
+void SystemInitialize();
+void Sleep(int MinutesToSleep);
+int printGPSInfo();
 
 NMEAGPS GPS;
 gps_fix fix;
 NeoSWSerial gpsPort(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
-      int SHORTSLEEP=4;
+      int SHORTSLEEP=10;
       int LONGSLEEP=8;
       int BEGINNIGHT=25;
       int ENDNIGHT=25;
       int GPS_BAUD=9600;
       int ENDMONTH=-1;
       int ENDDAY=-1;
-      bool          waitingForFix = true;
-const unsigned long GPS_TIMEOUT   = 60000; // 2 minutes
+      int          waitingForFix = 1;
+const unsigned long GPS_TIMEOUT   = 120000; // 2 minutes
       unsigned long GPS_TIME      = 0;
-      bool turnGPSoff = false;
+      int turnGPSoff = 0;
       File dataFile;
 
 void setup() {
-  Serial.begin(9600);
-  Serial.println("Starting....");
   SystemInitialize();
   //LoadSettings();
   digitalWrite(GPSpower,HIGH);
   gpsPort.begin(GPS_BAUD);
+  Blink(REDLED);
   Blink(GREENLED);
-  
+  digitalWrite(GREENLED,HIGH);
+  digitalWrite(REDLED,HIGH);
+  delay(50);
+  Blink(REDLED);
+  Blink(GREENLED);
   
 }
 
 
 void loop() {
   //digitalWrite(GREENLED,!digitalRead(GREENLED)); //heartbeat
-  
+    
   // Is a GPS fix available?*******************
   if (GPS.available( gpsPort )) 
   {
     fix = GPS.read();
+    Blink(GREENLED);
     if (waitingForFix) 
     {
-      if(printGPSInfo())//Attempt to print
+      //Blink(REDLED);
+        if (fix.valid.location&&fix.valid.date&&fix.valid.time)
         {
-          waitingForFix = false;
-          turnGPSoff    = true;
+          printGPSInfo();//Attempt to print
+          waitingForFix = 0;
+          turnGPSoff    = 1;
         }
-      Serial.println( millis() - GPS_TIME ); // DEBUG
+        else
+        {
+          Blink(REDLED);
+        }
+      //Serial.println( millis() - GPS_TIME ); // DEBUG
     }
   }
   //***************************************
@@ -67,18 +84,40 @@ void loop() {
   
   // Have we waited too long for a GPS fix?
   if (waitingForFix && (millis() - GPS_TIME > GPS_TIMEOUT)) {
-    waitingForFix = false;
-    turnGPSoff    = true;
+    waitingForFix = 0;
+    turnGPSoff    = 1;
+    Blink(REDLED);
+    Blink(REDLED);
+    dataFile = SD.open("gpslog.csv", FILE_WRITE); //open SD
+    while(!dataFile)
+    {
+      SD.end();
+      delay(200);
+      SD.begin(SDCHIPSELECT);
+      dataFile = SD.open("gpslog.csv", FILE_WRITE);
+    }
+    if (dataFile)
+    {
+    dataFile.println("0,0,0,0,0,0,0,0,0"); //print a blank
+    dataFile.close();
+    }
+    else 
+    {
+      //Blink(REDLED);
+      //Blink(REDLED);
+
+    }
+    
  }
+
 //******************************************
  
  //Sleep 
   if (turnGPSoff) 
   {
     digitalWrite(GPSpower, LOW);
-    digitalWrite(GREENLED,LOW);
-    digitalWrite(REDLED,HIGH);
-    if((int)fix.dateTime.month==ENDMONTH)
+    //digitalWrite(REDLED,HIGH);
+    /*if((int)fix.dateTime.month==ENDMONTH) Removed for now, plan to re-add after testing confirms this is not the error
       if((int)fix.dateTime.day==ENDDAY)
       {
         while(1)
@@ -88,7 +127,8 @@ void loop() {
           Blink(REDLED);
           Sleep(1);
         }
-      }
+      }*/
+      
     if((int)fix.dateTime.hours>=BEGINNIGHT&&(int)fix.dateTime.hours<=ENDNIGHT)
     {
       Sleep(60*LONGSLEEP);
@@ -97,55 +137,67 @@ void loop() {
     {
       Sleep(SHORTSLEEP);
     }
-    digitalWrite(REDLED,LOW);
     digitalWrite(GPSpower,HIGH);
-    waitingForFix = true;
-    turnGPSoff    = false;
+    Blink(GREENLED);
+     
+    waitingForFix = 1;
+    turnGPSoff    = 0;
     GPS_TIME=millis();
-    delay(15*Second); 
   }
-  //******************************
 
+
+  //******************************
+  delay(100);
 } // loop
 
 
-bool printGPSInfo()
+int printGPSInfo()
 {
-  if (fix.valid.location){
-  if (fix.valid.altitude){
-  if (fix.valid.heading){
-  if (fix.valid.speed){
-  if (fix.valid.date){
-  if (fix.valid.time){
-  if (fix.valid.satellites&& (fix.satellites > 4)){
-  {
-    Serial.println(fix.dateTime.hours);
+
+    //Serial.println(fix.dateTime.hours);
     dataFile = SD.open("gpslog.csv", FILE_WRITE); //open SD
+    while(!dataFile)
+    {
+      SD.end();
+      delay(200);
+      SD.begin(SDCHIPSELECT);
+      dataFile = SD.open("gpslog.csv", FILE_WRITE);
+      //Blink(REDLED);
+    }
     if (dataFile)
     {
-    dataFile.print(String(fix.dateTime.year)  +",");
-    dataFile.print(String(fix.dateTime.month)+",");
-    dataFile.print(String(fix.dateTime.date)+",");
-     
-    dataFile.print(String(fix.dateTime.hours)+",");
-    dataFile.print(String(fix.dateTime.minutes)+",");
-    dataFile.print(String(fix.dateTime.seconds)+",");
+      Blink(GREENLED); 
+      dataFile.print(String(fix.dateTime.year));
+      dataFile.print(",");
+      dataFile.print(String(fix.dateTime.month));
+      dataFile.print(",");
+      dataFile.print(String(fix.dateTime.date));
+      dataFile.print(",");
+      dataFile.print(String(fix.dateTime.hours));
+      dataFile.print(",");
+      dataFile.print(String(fix.dateTime.minutes));
+      dataFile.print(",");
+      dataFile.print(String(fix.dateTime.seconds));
+      dataFile.print(",");
 
 
-    dataFile.print(String(fix.valid.satellites)+",");
+      dataFile.print(String(fix.valid.satellites));
+      dataFile.print(",");
+      dataFile.print(fix.latitude(),10);dataFile.print(",");
+      dataFile.println(fix.longitude(),10);
+      dataFile.close();
 
-    dataFile.print(fix.latitude(),10);dataFile.print(",");
-    dataFile.println(fix.longitude(),10);
-    dataFile.close();
-    return true;
+      return 1;
     }
-    else
-    {
-      //Blink(REDLED);
-      //Blink(REDLED);
-      return false;
-    }
-  }}}}}}}}
+  else
+  {
+    digitalWrite(REDLED,HIGH);
+    digitalWrite(GREENLED,HIGH);
+    delay(500);
+    digitalWrite(REDLED,LOW);
+    digitalWrite(GREENLED,LOW);
+    return 0;
+  }
 }
 
 void Sleep(int MinutesToSleep)
@@ -165,14 +217,12 @@ void Sleep(int MinutesToSleep)
 void Blink(int pin)
 {
   digitalWrite(pin,LOW);
-  delay(10);
+  delay(100);
   digitalWrite(pin,HIGH);
-  delay(200);
+  delay(100);
   digitalWrite(pin,LOW);
-  delay(200);
-  digitalWrite(pin,HIGH); 
-  delay(200);
-  digitalWrite(pin,LOW);
+  delay(100);
+
 }
 
 void SystemInitialize()
