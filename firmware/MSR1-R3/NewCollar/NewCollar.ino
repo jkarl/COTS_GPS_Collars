@@ -22,11 +22,13 @@ void Blink(int pin);
 void SystemInitialize();
 void Sleep(int MinutesToSleep);
 int printGPSInfo();
+int NumFromSD();
+
 
 NMEAGPS GPS;
 gps_fix fix;
 NeoSWSerial gpsPort(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
-      int SHORTSLEEP=10;
+      int SHORTSLEEP=9;
       int LONGSLEEP=8;
       int BEGINNIGHT=25;
       int ENDNIGHT=25;
@@ -34,7 +36,7 @@ NeoSWSerial gpsPort(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
       int ENDMONTH=-1;
       int ENDDAY=-1;
       int          waitingForFix = 1;
-const unsigned long GPS_TIMEOUT   = 120000; // 2 minutes
+const unsigned long GPS_TIMEOUT   = 90000; // 1.5 minutes
       unsigned long GPS_TIME      = 0;
       int turnGPSoff = 0;
       File dataFile;
@@ -237,24 +239,26 @@ void SystemInitialize()
     digitalWrite(GREENLED,LOW); 
     digitalWrite(REDLED,HIGH); 
     SD.end();
-    while(1)
+    while(!SD.begin(SDCHIPSELECT))
     {
-      Blink(REDLED);
+      SD.end();
     }
   }
+  digitalWrite(REDLED,LOW);
+  
 }
 
 void LoadSettings()
 {
-  if (!SD.begin(SDCHIPSELECT)) // see if the card is present and can be initialized, also sets the object to hold onto that chip select pin
-  {  
-    //Serial.println("SD fail"); //Tell PC, can be commented out
-    //Serial.println("Halting...");
-    digitalWrite(GREENLED,LOW); 
-    digitalWrite(REDLED,HIGH); 
-    SD.end();
-    while(1);
-  }
+  dataFile = SD.open("settings.csv", FILE_WRITE);
+  while(!dataFile)
+    {
+      SD.end();
+      delay(200);
+      SD.begin(SDCHIPSELECT);
+      dataFile = SD.open("settings.csv", FILE_WRITE);
+      //Blink(REDLED);
+    }
   if(dataFile = SD.open("settings.csv", FILE_READ))
   {
   //Serial.println("Opening settings");
