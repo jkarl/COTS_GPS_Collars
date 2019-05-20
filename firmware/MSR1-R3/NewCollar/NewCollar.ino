@@ -1,7 +1,9 @@
 #include <NMEAGPS.h>
 #include <SD.h>
 #include <SPI.h>
-
+#include <avr/sleep.h>
+#include <avr/power.h>
+#include <avr/wdt.h>
 
 #define LED_PIN (5)
 #define RXPin (4)
@@ -23,7 +25,7 @@ void SystemInitialize();
 void Sleep(int MinutesToSleep);
 int printGPSInfo();
 int NumFromSD();
-
+void EnterSleep();
 
 NMEAGPS GPS;
 gps_fix fix;
@@ -41,9 +43,22 @@ const unsigned long GPS_TIMEOUT   = 90000; // 1.5 minutes
       int turnGPSoff = 0;
       File dataFile;
 
+ISR(WDT_vect)
+{
+//This wakes the system, nothing actually needs to happen here
+
+//It appears the interrupt flag doesn't need to be cleared, which is strange.
+  MCUSR &= ~(1<<WDRF); 
+//I've included it because it SHOULD need to be cleared.
+
+}
+
+
+
 void setup() {
   SystemInitialize();
-  //LoadSettings();
+  Serial.begin(9600);
+  LoadSettings();
   digitalWrite(GPSpower,HIGH);
   gpsPort.begin(GPS_BAUD);
   Blink(REDLED);
@@ -206,8 +221,8 @@ void Sleep(int MinutesToSleep)
 {
    for(int sec=0, minutes=0;minutes<MinutesToSleep;sec+=8) //Actual waiting happens here
                 {
-                  //enterSleep();
-                  delay(8000);
+                  EnterSleep();
+                  //delay(8000);
                   if(sec>=60)
                   {
                     minutes++;
@@ -243,52 +258,53 @@ void SystemInitialize()
     {
       SD.end();
     }
+    LoadSettings();
   }
   digitalWrite(REDLED,LOW);
-  
+  MCUSR &= ~(1<<WDRF);
+  WDTCSR |= (1<<WDCE) | (1<<WDE);
+  WDTCSR = 1<<WDP0 | 1<<WDP3; /* 8.0 seconds */
+  WDTCSR |= _BV(WDIE);
+  delay(50);
 }
 
 void LoadSettings()
 {
   dataFile = SD.open("settings.csv", FILE_WRITE);
-  while(!dataFile)
+  int Error=0;
+  while(!dataFile&&Error<10)
     {
       SD.end();
       delay(200);
       SD.begin(SDCHIPSELECT);
       dataFile = SD.open("settings.csv", FILE_WRITE);
       //Blink(REDLED);
+      Error++;
     }
   if(dataFile = SD.open("settings.csv", FILE_READ))
   {
-  //Serial.println("Opening settings");
-
-    //Serial.println(F("Terminal for GPS Collar MS-R1"));
-    //Serial.println(F("Created 12/19/2018"));
-    //Serial.println(F("Last code update on 1/16/2018"));
-    //Serial.println(F("Beginning Startup..."));
-    //Serial.println(F("SD Card Detected"));
+  Serial.println("Opening settings");
     //TIMEZONEADJ=NumFromSD();
     //Serial.print("Time Zone: ");
     //Serial.println(TIMEZONEADJ);
     SHORTSLEEP=NumFromSD();
-    //Serial.print("Minute Sleep: ");
-    //Serial.println(SHORTSLEEP);
+    Serial.print("Minute Sleep: ");
+    Serial.println(SHORTSLEEP);
     LONGSLEEP=NumFromSD();
-    //Serial.print("Hour Sleep: ");
-    //Serial.println(LONGSLEEP);
+    Serial.print("Hour Sleep: ");
+    Serial.println(LONGSLEEP);
     BEGINNIGHT=NumFromSD();
-    //Serial.print("Night (24-hour): ");
-    //Serial.println(BEGINNIGHT);
+    Serial.print("Night (24-hour): ");
+    Serial.println(BEGINNIGHT);
     ENDNIGHT=NumFromSD();
-    //Serial.print("Day (24-hour): ");
-    //Serial.println(ENDNIGHT);
+    Serial.print("Day (24-hour): ");
+    Serial.println(ENDNIGHT);
     //DESIREDHDOP=NumFromSD();
     //Serial.print("HDOP: ");
     //Serial.println(DESIREDHDOP);
     GPS_BAUD=NumFromSD();
-    //Serial.print("GPS baud rate: ");
-    //Serial.println(GPSBaud);
+    Serial.print("GPS baud rate: ");
+    Serial.println(GPS_BAUD);
     //Serialprinting=NumFromSD();
     ENDMONTH=NumFromSD();
     //Serial.print("End Month: ");
@@ -339,4 +355,18 @@ int NumFromSD()
       ToReturn=ToReturn*-1;
     }
   return(ToReturn);
+}
+void EnterSleep(void)
+{
+  set_sleep_mode(SLEEP_MODE_PWR_SAVE);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
+  sleep_enable();
+  
+  /* Now enter sleep mode. */
+  sleep_mode();
+  
+  /* The program will continue from here after the WDT timeout*/
+  sleep_disable(); /* First thing to do is disable sleep. */
+  
+  /* Re-enable the peripherals. */
+  power_all_enable();
 }
