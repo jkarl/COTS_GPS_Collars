@@ -38,7 +38,7 @@ NeoSWSerial gpsPort(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
       int ENDMONTH=-1;
       int ENDDAY=-1;
       int          waitingForFix = 1;
-const unsigned long GPS_TIMEOUT   = 90000; // 1.5 minutes
+      unsigned long GPS_TIMEOUT   = 90*Second; // 1.5 minutes
       unsigned long GPS_TIME      = 0;
       int turnGPSoff = 0;
       File dataFile;
@@ -132,6 +132,7 @@ void loop() {
  //Sleep 
   if (turnGPSoff) 
   {
+    gpsPort.end();
     digitalWrite(GPSpower, LOW);
     //digitalWrite(REDLED,HIGH);
     /*if((int)fix.dateTime.month==ENDMONTH) Removed for now, plan to re-add after testing confirms this is not the error
@@ -154,7 +155,9 @@ void loop() {
     {
       Sleep(SHORTSLEEP);
     }
+    
     digitalWrite(GPSpower,HIGH);
+    gpsPort.begin(GPS_BAUD);
     Blink(GREENLED);
      
     waitingForFix = 1;
@@ -309,6 +312,7 @@ void LoadSettings()
     ENDMONTH=NumFromSD();
     //Serial.print("End Month: ");
     ENDDAY=NumFromSD();
+    GPS_TIMEOUT=NumFromSD()*Second;
   }
   else
   {
