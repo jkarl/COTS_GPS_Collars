@@ -85,6 +85,8 @@ void loop() {
       //Blink(REDLED);
         if (fix.valid.location&&fix.valid.date&&fix.valid.time)
         {
+          gpsPort.end();
+          digitalWrite(GPSpower, LOW);
           printGPSInfo();//Attempt to print
           waitingForFix = 0;
           turnGPSoff    = 1;
@@ -132,8 +134,7 @@ void loop() {
  //Sleep 
   if (turnGPSoff) 
   {
-    gpsPort.end();
-    digitalWrite(GPSpower, LOW);
+
     //digitalWrite(REDLED,HIGH);
     /*if((int)fix.dateTime.month==ENDMONTH) Removed for now, plan to re-add after testing confirms this is not the error
       if((int)fix.dateTime.day==ENDDAY)
