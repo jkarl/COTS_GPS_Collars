@@ -30,18 +30,19 @@ void EnterSleep();
 NMEAGPS GPS;
 gps_fix fix;
 NeoSWSerial gpsPort(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
-      int SHORTSLEEP=9;
-      int LONGSLEEP=8;
-      int BEGINNIGHT=25;
-      int ENDNIGHT=25;
-      int GPS_BAUD=9600;
-      int ENDMONTH=-1;
-      int ENDDAY=-1;
-      int          waitingForFix = 1;
-      unsigned long GPS_TIMEOUT   = 90*Second; // 1.5 minutes
-      unsigned long GPS_TIME      = 0;
-      int turnGPSoff = 0;
-      File dataFile;
+File dataFile;
+
+int SHORTSLEEP=9;
+int LONGSLEEP=8;
+int BEGINNIGHT=25;
+int ENDNIGHT=25;
+int GPS_BAUD=9600;
+int ENDMONTH=-1;
+int ENDDAY=-1;
+int waitingForFix = 1;
+double GPS_TIMEOUT   = 90; // 1.5 minutes
+double GPS_TIME      = 0;
+int turnGPSoff = 0;
 
 ISR(WDT_vect)
 {
@@ -57,9 +58,10 @@ ISR(WDT_vect)
 
 void setup() {
   SystemInitialize();
-  Serial.begin(9600);
+  //Serial.begin(9600);
   LoadSettings();
   digitalWrite(GPSpower,HIGH);
+  delay(10);
   gpsPort.begin(GPS_BAUD);
   Blink(REDLED);
   Blink(GREENLED);
@@ -102,7 +104,8 @@ void loop() {
 
   
   // Have we waited too long for a GPS fix?
-  if (waitingForFix && (millis() - GPS_TIME > GPS_TIMEOUT)) {
+  if (waitingForFix && (millis() - GPS_TIME > GPS_TIMEOUT*Second)) 
+  {
     waitingForFix = 0;
     turnGPSoff    = 1;
     Blink(REDLED);
@@ -119,12 +122,6 @@ void loop() {
     {
     dataFile.println("0,0,0,0,0,0,0,0,0"); //print a blank
     dataFile.close();
-    }
-    else 
-    {
-      //Blink(REDLED);
-      //Blink(REDLED);
-
     }
     
  }
@@ -287,33 +284,33 @@ void LoadSettings()
     }
   if(dataFile = SD.open("settings.csv", FILE_READ))
   {
-  Serial.println("Opening settings");
+  //Serial.println("Opening settings");
     //TIMEZONEADJ=NumFromSD();
     //Serial.print("Time Zone: ");
     //Serial.println(TIMEZONEADJ);
     SHORTSLEEP=NumFromSD();
-    Serial.print("Minute Sleep: ");
-    Serial.println(SHORTSLEEP);
+    //Serial.print("Minute Sleep: ");
+    //Serial.println(SHORTSLEEP);
     LONGSLEEP=NumFromSD();
-    Serial.print("Hour Sleep: ");
-    Serial.println(LONGSLEEP);
+    //Serial.print("Hour Sleep: ");
+    //Serial.println(LONGSLEEP);
     BEGINNIGHT=NumFromSD();
-    Serial.print("Night (24-hour): ");
-    Serial.println(BEGINNIGHT);
+    //Serial.print("Night (24-hour): ");
+    //Serial.println(BEGINNIGHT);
     ENDNIGHT=NumFromSD();
-    Serial.print("Day (24-hour): ");
-    Serial.println(ENDNIGHT);
+    //Serial.print("Day (24-hour): ");
+    //Serial.println(ENDNIGHT);
     //DESIREDHDOP=NumFromSD();
     //Serial.print("HDOP: ");
     //Serial.println(DESIREDHDOP);
     GPS_BAUD=NumFromSD();
-    Serial.print("GPS baud rate: ");
-    Serial.println(GPS_BAUD);
+    //Serial.print("GPS baud rate: ");
+    //Serial.println(GPS_BAUD);
     //Serialprinting=NumFromSD();
     ENDMONTH=NumFromSD();
     //Serial.print("End Month: ");
     ENDDAY=NumFromSD();
-    GPS_TIMEOUT=NumFromSD()*Second;
+    GPS_TIMEOUT=NumFromSD();
   }
   else
   {
