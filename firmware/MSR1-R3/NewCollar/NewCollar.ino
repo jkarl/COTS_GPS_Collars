@@ -5,6 +5,8 @@
 #include <avr/power.h>
 #include <avr/wdt.h>
 
+
+
 #define LED_PIN (5)
 #define RXPin (4)
 #define TXPin (3)
@@ -145,14 +147,14 @@ void loop() {
         }
       }*/
       
-    if((int)fix.dateTime.hours>=BEGINNIGHT&&(int)fix.dateTime.hours<=ENDNIGHT)
-    {
-      Sleep(60*LONGSLEEP);
-    }
-    else
-    {
+    //if((int)fix.dateTime.hours>=BEGINNIGHT&&(int)fix.dateTime.hours<=ENDNIGHT)
+    //{
+     // Sleep(60*LONGSLEEP);
+    //}
+    //else
+    //{
       Sleep(SHORTSLEEP);
-    }
+    //}
     
     digitalWrite(GPSpower,HIGH);
     gpsPort.begin(GPS_BAUD);
@@ -255,12 +257,11 @@ void SystemInitialize()
     digitalWrite(GREENLED,LOW); 
     digitalWrite(REDLED,HIGH); 
     SD.end();
-    while(!SD.begin(SDCHIPSELECT))
+    while(1)
     {
-      SD.end();
+      digitalWrite(REDLED,HIGH);
     }
-    LoadSettings();
-  }
+   }
   digitalWrite(REDLED,LOW);
   MCUSR &= ~(1<<WDRF);
   WDTCSR |= (1<<WDCE) | (1<<WDE);
