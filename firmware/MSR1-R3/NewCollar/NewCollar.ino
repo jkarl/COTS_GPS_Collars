@@ -173,7 +173,7 @@ void loop() {
 
 int printGPSInfo()
 {
-
+    noInterrupts();
     //Serial.println(fix.dateTime.hours);
     dataFile = SD.open("gpslog.csv", FILE_WRITE); //open SD
     while(!dataFile)
@@ -206,7 +206,7 @@ int printGPSInfo()
       dataFile.print(fix.latitude(),10);dataFile.print(",");
       dataFile.println(fix.longitude(),10);
       dataFile.close();
-
+      interrupts();
       return 1;
     }
   else
@@ -216,6 +216,7 @@ int printGPSInfo()
     delay(500);
     digitalWrite(REDLED,LOW);
     digitalWrite(GREENLED,LOW);
+    interrupts();
     return 0;
   }
 }
@@ -272,15 +273,16 @@ void SystemInitialize()
 
 void LoadSettings()
 {
+  noInterrupts();
   dataFile = SD.open("settings.csv", FILE_WRITE);
   int Error=0;
   while(!dataFile&&Error<10)
     {
       SD.end();
-      delay(200);
+      delay(500);
       SD.begin(SDCHIPSELECT);
       dataFile = SD.open("settings.csv", FILE_WRITE);
-      //Blink(REDLED);
+      Blink(REDLED);
       Error++;
     }
   if(dataFile = SD.open("settings.csv", FILE_READ))
@@ -318,7 +320,7 @@ void LoadSettings()
     //Serial.println("Settings not found, using default.");
   }
     dataFile.close();
-  
+    interrupts();
 }
 
 int NumFromSD()
