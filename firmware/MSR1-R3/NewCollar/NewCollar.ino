@@ -60,6 +60,7 @@ ISR(WDT_vect)
 
 void setup() {
   SystemInitialize();
+  noInterrupts();
   //Serial.begin(9600);
   LoadSettings();
   digitalWrite(GPSpower,HIGH);
