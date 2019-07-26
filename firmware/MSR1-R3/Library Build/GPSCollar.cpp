@@ -1,79 +1,119 @@
 #include <GPSCollar.h>
 
-int GPSCollar::printGPSInfo()
+//The interrupt used by WDT (needs to be here in a global area)
+ISR(WDT_vect)
 {
+//This wakes the system, nothing actually needs to happen here
 
-    //Serial.println(fix.dateTime.hours);
-    dataFile = SD.open("gpslog.csv", FILE_WRITE); //open SD
-    while(!dataFile)
+//It appears the interrupt flag doesn't need to be cleared, which is strange.
+  MCUSR &= ~(1<<WDRF); 
+//I've included it because it SHOULD need to be cleared.
+
+}
+
+
+
+
+
+GPSCollar::GPSCollar(NMEAGPS *GPS,gps_fix *fix,NeoSWSerial gpsPort(int,int),File *dataFile)
+{
+	_GPS=GPS;
+	_fix=fix;
+	_gpsPort=gpsPort;
+	_dataFile=dataFile;
+	pinMode(_GPSpower, OUTPUT);
+	pinMode(_REDLED,OUTPUT);
+	pinMode(_GREENLED,OUTPUT);
+	if (!SD.begin(_SDCHIPSELECT)) // see if the card is present and can be initialized, also sets the object to hold onto that chip select pin
+	{  
+		digitalWrite(_GREENLED,LOW); 
+		digitalWrite(_REDLED,HIGH); 
+		SD.end();
+   }
+   else
+   {
+	   digitalWrite(_GREENLED,HIGH);
+   }
+}
+
+int GPSCollar::AttemptGPS()
+{
+  if (_GPS.available( _gpsPort )) //is there data?
+  {
+    _fix = _GPS.read(); //if yes, take it
+	if (_fix.valid.location&&_fix.valid.date&&_fix.valid.time) //is the data valid?
+	{
+		//fix should already have the valid data, and I don't want to touch the SD here.
+		return 0;
+	}
+  }
+  return 1;
+}
+
+int GPSCollar::DumpGPSInfo()
+{
+    _dataFile = SD.open("gpslog.csv", FILE_WRITE); //open SD
+	int error =0;
+    while(!_dataFile&&error<10)
     {
       SD.end();
       delay(200);
-      SD.begin(SDCHIPSELECT);
-      dataFile = SD.open("gpslog.csv", FILE_WRITE);
-      //Blink(REDLED);
+      SD.begin(_SDCHIPSELECT);
+      _dataFile = SD.open("gpslog.csv", FILE_WRITE);
+      error++;
     }
-    if (dataFile)
+    if (_dataFile)
     {
-      Blink(GREENLED); 
-      dataFile.print(String(fix.dateTime.year));
-      dataFile.print(",");
-      dataFile.print(String(fix.dateTime.month));
-      dataFile.print(",");
-      dataFile.print(String(fix.dateTime.date));
-      dataFile.print(",");
-      dataFile.print(String(fix.dateTime.hours));
-      dataFile.print(",");
-      dataFile.print(String(fix.dateTime.minutes));
-      dataFile.print(",");
-      dataFile.print(String(fix.dateTime.seconds));
-      dataFile.print(",");
-
-
-      dataFile.print(String(fix.valid.satellites));
-      dataFile.print(",");
-      dataFile.print(fix.latitude(),10);dataFile.print(",");
-      dataFile.println(fix.longitude(),10);
-      dataFile.close();
-
-      return 1;
+      _dataFile.print(String(_fix.dateTime.year));
+      _dataFile.print(",");
+      _dataFile.print(String(_fix.dateTime.month));
+      _dataFile.print(",");
+      _dataFile.print(String(_fix.dateTime.date));
+      _dataFile.print(",");
+      _dataFile.print(String(_fix.dateTime.hours));
+      _dataFile.print(",");
+      _dataFile.print(String(_fix.dateTime.minutes));
+      _dataFile.print(",");
+      _dataFile.print(String(_fix.dateTime.seconds));
+      _dataFile.print(",");
+      _dataFile.print(String(_fix.valid.satellites));
+      _dataFile.print(",");
+      _dataFile.print(_fix.latitude(),10);_dataFile.print(",");
+      _dataFile.println(_fix.longitude(),10);
+      _dataFile.close();
+      return 0;
     }
   else
   {
-    digitalWrite(REDLED,HIGH);
-    digitalWrite(GREENLED,HIGH);
-    delay(500);
-    digitalWrite(REDLED,LOW);
-    digitalWrite(GREENLED,LOW);
-    return 0;
+    return 1;
   }
 }
 
 void GPSCollar::WaitSleep(int MinutesToSleep)
 {
-   for(int sec=0, minutes=0;minutes<MinutesToSleep;sec+=8) //Actual waiting happens here
-                {
-                  EnterSleep();
-                  //delay(8000);
-                  if(sec>=60)
-                  {
-                    minutes++;
-                    sec=0;
-                  }
-                }
+	delay(MinutesToSleep*60*_Second);
 }
 
 void GPSCollar::WDTSleep(int MinutesToSleep)
 {
    for(int sec=0, minutes=0;minutes<MinutesToSleep;sec+=8) //Actual waiting happens here
                 {
-                  EnterSleep();
-                  //delay(8000);
-                  if(sec>=60)
-                  {
-                    minutes++;
-                    sec=0;
-                  }
+                    set_sleep_mode(SLEEP_MODE_PWR_SAVE);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
+					sleep_enable();
+  
+					/* Now enter sleep mode. */
+					sleep_mode();
+  
+					/* The program will continue from here after the WDT timeout*/
+					sleep_disable(); /* First thing to do is disable sleep. */
+  
+					/* Re-enable the peripherals. */
+					power_all_enable(); 
+					if(sec>=60)
+					{
+						minutes++;
+						sec=0;
+					}
                 }
 }
 
@@ -89,54 +129,37 @@ void GPSCollar::Blink(int pin)
 
 }
 
-void GPSCollar::LoadSettings()
+int GPSCollar::LoadSettings()
 {
-  dataFile = SD.open("settings.csv", FILE_WRITE);
+  _dataFile = SD.open("settings.csv", FILE_WRITE);
   int Error=0;
-  while(!dataFile&&Error<10)
+  while(!_dataFile&&Error<10)
     {
       SD.end();
       delay(200);
-      SD.begin(SDCHIPSELECT);
-      dataFile = SD.open("settings.csv", FILE_WRITE);
-      //Blink(REDLED);
+      SD.begin(_SDCHIPSELECT);
+      _dataFile = SD.open("settings.csv", FILE_WRITE);
       Error++;
     }
-  if(dataFile = SD.open("settings.csv", FILE_READ))
+  if(_dataFile = SD.open("settings.csv", FILE_READ))
   {
-  //Serial.println("Opening settings");
-    //TIMEZONEADJ=NumFromSD();
-    //Serial.print("Time Zone: ");
-    //Serial.println(TIMEZONEADJ);
-    SHORTSLEEP=NumFromSD();
-    //Serial.print("Minute Sleep: ");
-    //Serial.println(SHORTSLEEP);
-    LONGSLEEP=NumFromSD();
-    //Serial.print("Hour Sleep: ");
-    //Serial.println(LONGSLEEP);
-    BEGINNIGHT=NumFromSD();
-    //Serial.print("Night (24-hour): ");
-    //Serial.println(BEGINNIGHT);
-    ENDNIGHT=NumFromSD();
-    //Serial.print("Day (24-hour): ");
-    //Serial.println(ENDNIGHT);
-    //DESIREDHDOP=NumFromSD();
-    //Serial.print("HDOP: ");
-    //Serial.println(DESIREDHDOP);
-    GPS_BAUD=NumFromSD();
-    //Serial.print("GPS baud rate: ");
-    //Serial.println(GPS_BAUD);
-    //Serialprinting=NumFromSD();
-    ENDMONTH=NumFromSD();
-    //Serial.print("End Month: ");
-    ENDDAY=NumFromSD();
-    GPS_TIMEOUT=NumFromSD();
+    _SHORTSLEEP=NumFromSD();
+    _LONGSLEEP=NumFromSD();
+    _BEGINNIGHT=NumFromSD();
+    _ENDNIGHT=NumFromSD();
+    _GPS_BAUD=NumFromSD();
+    _ENDMONTH=NumFromSD();
+    _ENDDAY=NumFromSD();
+    _GPS_TIMEOUT=NumFromSD();
+	
+	return 0;
   }
   else
   {
-    //Serial.println("Settings not found, using default.");
+    //Multiple fails, give up
+	return 1;
   }
-    dataFile.close();
+    _dataFile.close();
   
 }
 
@@ -146,10 +169,10 @@ int GPSCollar::NumFromSD()
   int buf;
   int num[4];
   int i=0,neg=0,j=0;
-  while(dataFile.read()!=','); //read until ,
+  while(_dataFile.read()!=','); //read until ,
   do//begin extracting numbers
   {
-    buf=dataFile.read(); //get char
+    buf=_dataFile.read(); //get char
     if(buf!=13&&buf!='-'&&buf>=48&&buf<=57)
     {
     buf-=48; //convert char number to int number
@@ -178,17 +201,8 @@ int GPSCollar::NumFromSD()
     }
   return(ToReturn);
 }
-void GPSCollar::EnterSleep(void)
+
+int GPSCollar::CollarSD()
 {
-  set_sleep_mode(SLEEP_MODE_PWR_SAVE);   /* EDIT: could also use SLEEP_MODE_PWR_DOWN for lowest power consumption. */
-  sleep_enable();
-  
-  /* Now enter sleep mode. */
-  sleep_mode();
-  
-  /* The program will continue from here after the WDT timeout*/
-  sleep_disable(); /* First thing to do is disable sleep. */
-  
-  /* Re-enable the peripherals. */
-  power_all_enable();
+	return _SDCHIPSELECT;
 }
